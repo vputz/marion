@@ -1,0 +1,121 @@
+#!venv/bin/python
+
+import os
+import unittest
+
+from config import basedir
+import tutorial
+from tutorial.models import User, Role
+from io import BytesIO
+from flask import g, current_app
+from flask_security.utils import login_user, logout_user
+from flask.ext.testing import TestCase
+from flask.ext.sqlalchemy import SQLAlchemy
+from flask.ext.security import SQLAlchemyUserDatastore, current_user
+
+
+class UserTest( TestCase) :
+
+    TESTING = True
+    WTF_CSRF_ENABLED = False
+    SQLALCHEMY_DATABASE_URI = 'sqlite:///' + os.path.join(basedir, 'test.db')
+    STORAGE_BASEDIR = '/tmp'
+    SECRET_KEY = "you-will-never-guess"
+    
+    def create_app(self) :
+        return tutorial.create_app( self )
+    
+    def setUp( self ) :
+        self.user_datastore = SQLAlchemyUserDatastore(tutorial.db, User, Role )
+        tutorial.db.create_all()
+        #u = User( nickname='test1', email='test1@test.com' )
+        self.user = self.user_datastore.create_user( nickname = 'test1', email='test1@test.com', password='password' )
+        tutorial.db.session.add(self.user)
+        tutorial.db.session.commit()
+        # must commit before ID exists
+        self.first_id = self.user.id
+
+    def _login( self, email = "test1@test.com", password="password") :
+        data = { 'email' : email,
+                 'password' : password,
+                 'remember' : 'y' }
+        #print( "login: " + str(current_user) )
+        rv= self.client.post('/login', data=data, follow_redirects=True )
+        #print(rv)
+        #print( rv.data )
+        #u = User.query.get( self.first_id )
+        #login_user(u)
+
+    def _logout( self ) :
+        logout_user()
+        
+    def tearDown( self ) :
+        tutorial.db.session.remove()
+        tutorial.db.drop_all()
+
+    def test_create_user( self ) :
+        u = User.query.get( self.first_id )
+        self.assertEqual( u.nickname, 'test1' )
+
+    def test_query_user( self ) :
+        rv = self.client.get('/users/1')
+        self.assertEqual( rv.json['nickname'], 'test1' )
+
+    def fileContents( self, filename ) :
+        result = ""
+        with open(filename, 'r') as f :
+            result = f.read()
+        return result
+        
+    def test_upload_form( self ) :
+
+        self._login()
+        rv = self.client.post('/upload_file/', buffered=True,
+                           content_type='multipart/form-data',
+                           data={
+                               'file_1' : (BytesIO(b'Hello, World!'), 'test.txt')
+                           }, follow_redirects=True)
+        # check to see if the file is there
+        filename = '/tmp/user_1/test.txt'
+        self.assertTrue(os.path.isfile( filename ))
+        self.assertEqual( self.fileContents( filename ), "Hello, World!" )
+        os.remove( filename )
+        os.rmdir( '/tmp/user_1' )
+        self._logout()
+
+    def test_upload_api( self ) :
+
+        self._login()
+        rv = self.client.post('/upload', buffered=True,
+                           content_type='multipart/form-data',
+                           data={
+                               'files' : (BytesIO(b'Hello, World!'), 'test.txt')
+                           }, follow_redirects=True)
+        # check to see if the file is there
+        filename = '/tmp/user_1/test.txt'
+        self.assertTrue(os.path.isfile( filename ))
+        self.assertEqual( self.fileContents( filename ), "Hello, World!" )
+        os.remove( filename )
+        os.rmdir( '/tmp/user_1' )
+        self._logout()
+
+    def test_add_dataset_form( self ) :
+        self._login()
+        test_description = 'Description'
+        test_query = 'Query'
+        rv = self.client.post("/add_dataset/", buffered=True,
+                              data= { 'descriptionField' : test_description,
+                                      'queryField' : test_query },
+                              follow_redirects = True )
+        u = User.query.get(1)
+        self.assertEqual( len(list(u.datasets)), 1 )
+        self.assertEqual( u.datasets[0].description, test_description )
+        self.assertEqual( u.datasets[0].query_text, test_query )
+                                      
+        
+if __name__ == "__main__" :
+    unittest.main()
+
+
+
+        

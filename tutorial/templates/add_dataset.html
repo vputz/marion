@@ -1,0 +1,12 @@
+{% extends "base.html" %}
+
+{% block content %}
+{% from "_formhelpers.html" import render_field %}
+<form  action="/add_dataset/" method="POST" enctype="multipart/form-data">
+{{ form.csrf_token }}
+{{ render_field(form.descriptionField) }}
+{{ render_field(form.queryField) }}
+
+<p><input type="submit" value="Add this dataset">
+</form>
+{% endblock %}

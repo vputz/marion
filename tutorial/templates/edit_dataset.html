@@ -1,0 +1,33 @@
+{% extends "base.html" %}
+
+{% block content %}
+{% from "_formhelpers.html" import render_field %}
+<h2>
+{{ dataset.description }}
+</h2>
+<hr>
+Tab-separated files belonging to this dataset:
+<p>
+<table>
+{% for csvfile in dataset.csv_files %}
+<tr>
+<td>
+{{ csvfile.filename }}
+</td>
+<td><a href="{{ url_for('tutorial_bp.delete_tabfile', **{ 'tabfile_id' : csvfile.id } ) }}">Delete</a></td>
+</tr>
+{% endfor %}
+</table>
+<form  action="{{ url_for('tutorial_bp.edit_dataset', **{ 'dataset_id' : dataset.id }) }}" method="POST" enctype="multipart/form-data">
+{{ upload_form.csrf_token }}
+Add a file :{{ upload_form.file_1 }}
+<input type="submit" value="Upload">
+<hr>
+{% if dataset.h5_file_is_up_to_date() %}
+This dataset's H5 file is up to date
+{% else %}
+<font color="red">This dataset's H5 file is nonexistent or not up to date; click 
+<a href="{{ url_for('tutorial_bp.regenerate_h5', **{ 'dataset_id' : dataset.id }) }}">here</a> to regenerate it</font>
+{% endif %}
+</form>
+{% endblock %}
