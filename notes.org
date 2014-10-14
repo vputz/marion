@@ -1,0 +1,28 @@
+Use Flask-RESTful as per http://blog.miguelgrinberg.com/post/designing-a-restful-api-using-flask-restful
+
+- RESTful
+- passlib?
+
+- Data structures
+
+  -- USER
+  NAME string
+  USERNAME (string, primary key)
+  EMAIL string
+  PASSWORD_HASH string
+
+  -- Dataset
+  ID (primary key)
+  USERNAME (key)
+  DESCRIPTION (optional, string)
+  QUERY string
+  RAWDATA_FILEDIR string
+  H5_FILE string
+
+  -- dataset query result
+  ID (primary key)
+  DATASET_ID (foreign key)
+  QUERY_ID (foreign key)
+  
+
+** TODO Regenerating a blank H5 file hangs the system
