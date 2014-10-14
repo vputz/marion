@@ -1,6 +1,7 @@
 #!venv/bin/python
 
 import os
+import shutil
 import unittest
 
 from config import basedir
@@ -18,9 +19,11 @@ class UserTest( TestCase) :
 
     TESTING = True
     WTF_CSRF_ENABLED = False
-    SQLALCHEMY_DATABASE_URI = 'sqlite:///' + os.path.join(basedir, 'test.db')
+    SQLALCHEMY_DATABASE_URI = 'sqlite://' #/' + os.path.join(basedir, 'test.db')
     STORAGE_BASEDIR = '/tmp'
     SECRET_KEY = "you-will-never-guess"
+
+    _user_basedir = os.path.join( STORAGE_BASEDIR, 'user_1' )
     
     def create_app(self) :
         return tutorial.create_app( self )
@@ -35,6 +38,9 @@ class UserTest( TestCase) :
         # must commit before ID exists
         self.first_id = self.user.id
 
+    def get_user( self ) :
+        return User.query.get(1)
+        
     def _login( self, email = "test1@test.com", password="password") :
         data = { 'email' : email,
                  'password' : password,
@@ -50,8 +56,10 @@ class UserTest( TestCase) :
         logout_user()
         
     def tearDown( self ) :
+        self._logout()
         tutorial.db.session.remove()
         tutorial.db.drop_all()
+        self.clear_test_data_directory()
 
     def test_create_user( self ) :
         u = User.query.get( self.first_id )
@@ -76,12 +84,9 @@ class UserTest( TestCase) :
                                'file_1' : (BytesIO(b'Hello, World!'), 'test.txt')
                            }, follow_redirects=True)
         # check to see if the file is there
-        filename = '/tmp/user_1/test.txt'
+        filename = os.path.join(self._user_basedir, 'test.txt' )
         self.assertTrue(os.path.isfile( filename ))
         self.assertEqual( self.fileContents( filename ), "Hello, World!" )
-        os.remove( filename )
-        os.rmdir( '/tmp/user_1' )
-        self._logout()
 
     def test_upload_api( self ) :
 
@@ -92,26 +97,56 @@ class UserTest( TestCase) :
                                'files' : (BytesIO(b'Hello, World!'), 'test.txt')
                            }, follow_redirects=True)
         # check to see if the file is there
-        filename = '/tmp/user_1/test.txt'
+        filename = os.path.join(self._user_basedir, 'test.txt' )
         self.assertTrue(os.path.isfile( filename ))
         self.assertEqual( self.fileContents( filename ), "Hello, World!" )
-        os.remove( filename )
-        os.rmdir( '/tmp/user_1' )
         self._logout()
 
+    def clear_test_data_directory( self ) :
+        if os.path.exists( self._user_basedir ) :
+            shutil.rmtree( self._user_basedir )
+        
+    dataset_description = "Description"
+    dataset_query = "Query"
+        
+    def add_basic_dataset( self ) :
+        rv = self.client.post("/add_dataset/", buffered=True,
+                              data= { 'descriptionField' : self.dataset_description,
+                                      'queryField' : self.dataset_query },
+                              follow_redirects = True )
+        
     def test_add_dataset_form( self ) :
         self._login()
-        test_description = 'Description'
-        test_query = 'Query'
-        rv = self.client.post("/add_dataset/", buffered=True,
-                              data= { 'descriptionField' : test_description,
-                                      'queryField' : test_query },
-                              follow_redirects = True )
-        u = User.query.get(1)
+        u = self.get_user()
+        self.add_basic_dataset()
         self.assertEqual( len(list(u.datasets)), 1 )
-        self.assertEqual( u.datasets[0].description, test_description )
-        self.assertEqual( u.datasets[0].query_text, test_query )
-                                      
+        self.assertEqual( u.datasets[0].description, self.dataset_description )
+        self.assertEqual( u.datasets[0].query_text, self.dataset_query )
+
+    def add_tabfiles( self, dataset_id, filename ) :
+        with open( os.path.join( 'test_data', filename ), 'rb' ) as f1 :
+            rv = self.client.post("/edit_dataset/"+str(dataset_id), buffered=True,
+                                  data = { 'file_1' : (f1, filename ) },
+                                  follow_redirects = True)
+            f1.close()
+            print( rv )
+        
+    def test_dataset_h5_up_to_date( self ) :
+        self._login()
+        u = self.get_user()
+        self.add_basic_dataset()
+        d = u.datasets[0]
+        self.add_tabfiles( d.id, 'metamaterials_1.tab' )
+        self.assertEqual( len(list(d.csv_files)), 1 )
+        self.assertEqual( d.h5_file_is_up_to_date(), False )
+        self.client.post('/regenerate_h5/'+str(d.id) )
+        self.assertEqual( d.h5_file_is_up_to_date(), True )
+        self.add_tabfiles( d.id, 'metamaterials_2.tab' )
+        self.assertEqual( len(list(d.csv_files)), 2 )
+        self.assertEqual( d.h5_file_is_up_to_date(), False )
+        self.client.post('/regenerate_h5/'+str(d.id) )
+        self.assertEqual( d.h5_file_is_up_to_date(), True )
+        
         
 if __name__ == "__main__" :
     unittest.main()
