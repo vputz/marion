@@ -1,0 +1,15 @@
+{% extends "base.html" %}
+{% block content %}
+{% for item in query_data.items() %}
+
+<h2>{{ item[0] }}</h2>
+<table>
+{% for val in item[1][0:10] %}
+<tr>
+<td>{{ val['value'] }}</td><td>{{ val['label'] }}</td>
+</tr>
+{% endfor %}
+</table>
+
+{% endfor %}
+{% endblock %}
