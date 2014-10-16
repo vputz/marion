@@ -2,7 +2,9 @@ from flask import Flask, request, current_app
 
 from flask.ext.login import LoginManager
 from flask.ext.security import Security, SQLAlchemyUserDatastore, login_required
+
 from tutorial.views import tutorial_bp
+
 from tutorial.api import api
 from tutorial.models import User, Role, db
 user_datastore = SQLAlchemyUserDatastore(db, User, Role )

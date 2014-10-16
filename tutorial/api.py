@@ -4,8 +4,9 @@ from flask.ext.security import current_user
 import os.path
 
 from tutorial import models
+from tutorial.views import tutorial_bp
 
-api = Api()
+api = Api(prefix="/api/1.0")
 
 class UserAPI( Resource ) :
     def get(self, id):
@@ -34,18 +35,6 @@ class TaskListAPI( Resource) :
     def post(self) :
         pass
 
-class TaskAPI( Resource ) :
-    def get( self, id ) :
-        pass
-
-    def put( self, id ) :
-        pass
-
-    def delete(self, id ) :
-        pass
-
-api.add_resource( TaskListAPI, '/todo/api/v1.0/tasks', endpoint = 'tasks' )
-api.add_resource( TaskAPI, '/todo/api/v1.0/tasks/<int:id>', endpoint = 'task' )
 
 class UploadAPI( Resource ) :
 
@@ -64,3 +53,11 @@ class UploadAPI( Resource ) :
                   
 
 api.add_resource( UploadAPI, '/upload', endpoint = 'upload' )
+
+class RetrieveQueryResult( Resource ) :
+
+    def get(self, id):
+        q = models.Query_instance.query.get(id)
+        return q.retrieve_data()
+
+api.add_resource( RetrieveQueryResult, "/retrieve_query_result/<int:id>", endpoint="retrieve_query_result" )

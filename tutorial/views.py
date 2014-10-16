@@ -1,12 +1,13 @@
 import os
 from flask import render_template, flash, redirect, session, url_for, request, g, current_app, request
+from flask import Blueprint
 from flask.ext.login import login_user, logout_user, login_required
 from flask.ext.security import current_user
 #, oid
-from tutorial.forms import LoginForm, FileUploadForm, AddDatasetForm, AddCsvToDatasetForm
-from tutorial.models import User, db, Dataset, Csv_fileref
+from tutorial.forms import LoginForm, FileUploadForm, AddDatasetForm, AddCsvToDatasetForm, AddQueryToDatasetForm
+from tutorial.models import User, db, Dataset, Csv_fileref, Query, Query_instance
 from werkzeug import secure_filename
-from flask import Blueprint
+import json
 #, ROLE_USER, ROLE_ADMIN
 
 tutorial_bp = Blueprint('tutorial_bp', __name__, template_folder= 'templates' )
@@ -97,21 +98,38 @@ def delete_tabfile( tabfile_id ) :
     tabfile = Csv_fileref.query.get( int(tabfile_id) )
     dataset_id = tabfile.dataset.id
     # delete the actual file
-    os.remove( tabfile.stored_fullpath() )
+    if os.path.exists( tabfile.stored_fullpath() ) :
+        os.remove( tabfile.stored_fullpath() )
     # now delete the fileref
     db.session.delete( tabfile )
     db.session.commit()
     return redirect( url_for('tutorial_bp.edit_dataset', **{ 'dataset_id' : dataset_id } ) )
+
+@tutorial_bp.route('/delete_query_instance/<query_instance_id>' )
+@login_required
+def delete_query_instance( query_instance_id ) :
+    query_instance = Query_instance.query.get( int( query_instance_id ) )
+    dataset_id = query_instance.dataset.id
+    if os.path.exists( query_instance.stored_fullpath() ) :
+        os.remove( query_instance.stored_fullpath() )
+    db.session.delete( query_instance )
+    db.session.commit()
+    return redirect( url_for('tutorial_bp.edit_dataset', **{ 'dataset_id' : dataset_id } ))
 
 @tutorial_bp.route('/edit_dataset/<dataset_id>', methods=('GET','POST') )
 @login_required
 def edit_dataset( dataset_id ) :
     dataset = Dataset.query.get(int(dataset_id))
     upload_form = AddCsvToDatasetForm()
+    add_query_form = AddQueryToDatasetForm()
+    add_query_form.query.choices = [(q.id, q.name) for q in Query.query.order_by('name')]
     if upload_form.validate_on_submit() :
         dataset.add_csv( upload_form.file_1.data )
         return redirect( url_for( 'tutorial_bp.edit_dataset', **{ 'dataset_id' : dataset.id } ) )
-    return render_template('edit_dataset.html', dataset = dataset, upload_form = upload_form )
+    if add_query_form.validate_on_submit() :
+        dataset.add_query_instance( add_query_form.query.data )
+        return redirect( url_for( 'tutorial_bp.edit_dataset', **{ 'dataset_id' : dataset.id } ) )
+    return render_template('edit_dataset.html', dataset = dataset, upload_form = upload_form, add_query_form = add_query_form )
 
 @tutorial_bp.route('/regenerate_h5/<dataset_id>', methods=('GET', 'POST') )
 @login_required
@@ -120,3 +138,14 @@ def regenerate_h5( dataset_id ) :
     dataset.regenerate_h5_file()
     return redirect( url_for('tutorial_bp.edit_dataset', **{ 'dataset_id' : dataset_id } ) )
     
+@tutorial_bp.route('/view_query_instance/<query_instance_id>', methods=('GET', 'POST') )
+@login_required
+def view_query_instance( query_instance_id ) :
+    query_instance = Query_instance.query.get( int( query_instance_id ) )
+    return render_template( query_instance.query_def.template, query_data = query_instance.retrieve_data() )
+
+@tutorial_bp.route('/vis_query_instance/<query_instance_id>', methods=('GET','POST') )
+@login_required
+def vis_query_instance( query_instance_id ) :
+    query_instance = Query_instance.query.get( int( query_instance_id ) )
+    return render_template( "vis_"+query_instance.query_def.template, query_instance_id = query_instance_id, query_instance=query_instance )

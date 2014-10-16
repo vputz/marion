@@ -1,6 +1,7 @@
 from flask.ext.wtf import Form
+
 from flask_wtf.file import FileField, FileRequired
-from wtforms import StringField, BooleanField
+from wtforms import StringField, BooleanField, SelectField
 from wtforms.validators import DataRequired, Length
 
 
@@ -17,3 +18,6 @@ class AddDatasetForm( Form ) :
     
 class AddCsvToDatasetForm( Form ) :
     file_1 = FileField("file_1", validators =[FileRequired()])
+
+class AddQueryToDatasetForm( Form ) :
+    query = SelectField('Query', coerce=int)

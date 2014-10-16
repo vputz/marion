@@ -66,7 +66,7 @@ class UserTest( TestCase) :
         self.assertEqual( u.nickname, 'test1' )
 
     def test_query_user( self ) :
-        rv = self.client.get('/users/1')
+        rv = self.client.get('/api/1.0/users/1')
         self.assertEqual( rv.json['nickname'], 'test1' )
 
     def fileContents( self, filename ) :
@@ -91,7 +91,7 @@ class UserTest( TestCase) :
     def test_upload_api( self ) :
 
         self._login()
-        rv = self.client.post('/upload', buffered=True,
+        rv = self.client.post('/api/1.0/upload', buffered=True,
                            content_type='multipart/form-data',
                            data={
                                'files' : (BytesIO(b'Hello, World!'), 'test.txt')

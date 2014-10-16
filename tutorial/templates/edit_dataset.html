@@ -22,6 +22,7 @@ Tab-separated files belonging to this dataset:
 {{ upload_form.csrf_token }}
 Add a file :{{ upload_form.file_1 }}
 <input type="submit" value="Upload">
+
 <hr>
 {% if dataset.h5_file_is_up_to_date() %}
 This dataset's H5 file is up to date
@@ -30,4 +31,32 @@ This dataset's H5 file is up to date
 <a href="{{ url_for('tutorial_bp.regenerate_h5', **{ 'dataset_id' : dataset.id }) }}">here</a> to regenerate it</font>
 {% endif %}
 </form>
+
+<hr>
+<h2>
+Queries
+<p>
+<table>
+{% for query_instance in dataset.query_instances %}
+<tr>
+<td>
+{{ query_instance.query_def.name }}
+</td>
+<td>
+<a href="{{ url_for('tutorial_bp.view_query_instance', **{ 'query_instance_id' : query_instance.id } ) }}">View Results - text</a>
+<a href="{{ url_for('tutorial_bp.vis_query_instance', **{ 'query_instance_id' : query_instance.id } ) }}">View Results - graphs</a></td>
+<td>
+<a href="{{ url_for('tutorial_bp.delete_query_instance', **{ 'query_instance_id' : query_instance.id } ) }}">Delete</a>
+</td>
+</tr>
+{% endfor %}
+</table>
+<form action="{{ url_for('tutorial_bp.edit_dataset', **{ 'dataset_id' : dataset.id } ) }}" method="POST" enctype="multipart/form-data">
+{{ add_query_form.csrf_token }}
+Add a query: {{ add_query_form.query }}
+<input type="submit" value="Add Query">
+</form>
+
+
+
 {% endblock %}

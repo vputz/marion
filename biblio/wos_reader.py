@@ -77,87 +77,109 @@ def authorlist_from_authorfield( string ) :
 flatten_chain = itertools.chain.from_iterable
 
 Country_words = [x for x in """
-France
-South Korea
-Usa
-Australia
-Romania
-Finland
-China
-Italy
-Brazil
-Spain
-Portugal
-Ukraine
-Japan
-Germany
-Iran
-Slovakia
-Croatia
-Saudi Arabia
-Denmark
-Norway
-England
-Russia
-Canada
-Greece
-Turkey
-Sweden
-Switzerland
-Singapore
-Austria
-Taiwan
-Netherlands
-India
-Poland
-Czech Republic
-Egypt
-Malaysia
-Israel
-Belgium
-Mexico
-Serbia
-Thailand
-Chile
-Sri Lanka
-Cameroon
-Qatar
-Cote Ivoire
-Spain
-Vietnam
-Scotland
-Colombia
-Ireland
-Hungary
+Albania
 Algeria
-Pakistan
-Kuwait
 Arab Emirates
-Byelarus
-Monteneg
-New Zealand
 Argentina
-Lithuania
-Bulgaria
-Cyprus
 Armenia
-Morocco
-Georgia
-Wales
-Uruguay
-Moldova
-Tunisia
-Ethiopia
+Australia
+Austria
 Azerbaijan
 Bangladesh
-Oman
-Montenegro
+Belgium
+Bolivia
+Brazil
+Bulgaria
+Byelarus
+Combodia
+Cameroon
+Canada
+Chile
+China
+Colombia
+Costa Rica
+Cote Ivoire
+Croatia
 Cuba
+Cyprus
+Czech Republic
+Denmark
+Egypt
+England
+Estonia
+Ethiopia
+Faso
+Finland
+France
+Georgia
+Germany
+Ghana
+Greece
+Guatemala
+Hungary
+Iceland
+India
+Indonesia
+Iran
+Ireland
+Israel
+Italy
+Japan
+Jordan
+Kenya
+Kuwait
+Kyrgyzstan
+Latvia
+Lebanon
+Liberia
+Lithuania
+Luxembourg
+Malaysia
+Malta
+Mexico
+Moldova
+Monaco
+Monteneg
+Montenegro
+Morocco
+Netherlands
+New Zealand
+North Korea
+Norway
+Oman
+Pakistan
+Peru
+Poland
+Portugal
+Qatar
+Rep Congo
+Romania
+Russia
+Saudi Arabia
+Scotland
+Serbia
+Singapore
+Slovakia
 Slovenia
 South Africa
-Malta
-Estonia
+South Korea
+Spain
+Spain
+Sri Lanka
+Sweden
+Switzerland
+Taiwan
+Tanzania
+Thailand
+Tunisia
+Turkey
+Uganda
+Ukraine
+Uruguay
+Usa
 Uzbekistan
+Vietnam
+Wales
 """.split("\n") if len(x) > 0 ]
 
 Country_regexes = [re.compile( x+"$" ) for x in Country_words]
@@ -294,6 +316,9 @@ class Author( tables.IsDescription ) :
     author = tables.StringCol( 40 )
     address = tables.StringCol( 40 )
 
+class Keyword( tables.IsDescription ) :
+    keyword = tables.StringCol( 80 )
+    
 def make_pytable( w, filename, title="test" ) :
     """parses the wos reader and converts everything into an HDF5 pytable for faster access"""
     h5file = tables.openFile( filename, mode='w', title = title )
@@ -302,7 +327,7 @@ def make_pytable( w, filename, title="test" ) :
     countries = h5file.createVLArray( h5file.root, 'countries', tables.StringAtom(30) )
     cited_papers = h5file.createVLArray( h5file.root, 'cited_papers', tables.StringAtom(50) )
     abstracts = h5file.createVLArray( h5file.root, 'abstracts', tables.VLStringAtom() )
-
+    categories = h5file.createVLArray( h5file.root, 'categories', tables.StringAtom(40) )
     authortable = h5file.createTable( h5file.root, 'authortable', Author, "WOS Author data" )
     index = 0
     for p in w.reader() :
@@ -318,6 +343,7 @@ def make_pytable( w, filename, title="test" ) :
         paper.append()
 
         authors.append(authorlist_from_authorfield( p['AU'] ))
+        categories.append(authorlist_from_authorfield( p['WC'] ) )
         # now if each author is not already in the table, add to the author table
         aulist = authorlist_from_authorfield( p['AU'] )
         aflist = authorlist_from_authorfield( p['AF'] )
