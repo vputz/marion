@@ -1,5 +1,7 @@
 Use Flask-RESTful as per http://blog.miguelgrinberg.com/post/designing-a-restful-api-using-flask-restful
 
+http://ondras.zarovi.cz/sql/demo/
+
 - RESTful
 - passlib?
 
@@ -26,3 +28,4 @@ Use Flask-RESTful as per http://blog.miguelgrinberg.com/post/designing-a-restful
   
 
 ** TODO Regenerating a blank H5 file hangs the system
+

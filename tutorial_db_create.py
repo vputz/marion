@@ -6,7 +6,11 @@ from tutorial import db, app
 import os.path
 from flask.ext.security import SQLAlchemyUserDatastore
 
-from tutorial.models import User, Query, Role
+from tutorial.models import User, Query, Role, Gps_remap, Gps_cache
+
+def create_gps_cache() :
+    db.create_all( bind = 'gps_cache' )
+    
 
 with app.app_context() :
     db.create_all()
@@ -22,6 +26,10 @@ with app.app_context() :
     q = Query( name = "Country", description = "Analysis of a country; number of papers by subject, university, collaborating country", filename = "country_query.json", template="country_query.html" )
     db.session.add( q )
     db.session.commit()
+
+    create_gps_cache()
+
+    
     
 if not os.path.exists(SQLALCHEMY_MIGRATE_REPO) :
     api.create( SQLALCHEMY_MIGRATE_REPO, 'database repository')

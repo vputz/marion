@@ -223,3 +223,13 @@ class Query( db.Model ) :
     def stored_query_fullpath( self ) :
         return os.path.join( self.query_basepath(), self.filename )
 
+class Gps_remap( db.Model ) :
+    __bind_key__ = 'gps_cache'
+    from_location = db.Column( db.String( 128 ), primary_key=True )
+    to_location = db.Column( db.String( 128 ) )
+
+class Gps_cache( db.Model ) :
+    __bind_key__ = 'gps_cache'
+    location = db.Column( db.String(128), primary_key=True )
+    latitude = db.Column( db.Float( 32 ) )
+    longitude = db.Column( db.Float( 32 ) )

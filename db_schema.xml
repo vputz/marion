@@ -188,4 +188,35 @@
 <part>id</part>
 </key>
 </table>
+<table x="1011" y="151" name="Gps_remap">
+<row name="id" null="1" autoincrement="1">
+<datatype>INTEGER</datatype>
+<default>NULL</default></row>
+<row name="from" null="1" autoincrement="0">
+<datatype>CHAR(128)</datatype>
+<default>NULL</default></row>
+<row name="to" null="1" autoincrement="0">
+<datatype>CHAR(128)</datatype>
+<default>NULL</default></row>
+<key type="PRIMARY" name="">
+<part>id</part>
+</key>
+</table>
+<table x="1213" y="151" name="Gps_cache">
+<row name="id" null="1" autoincrement="1">
+<datatype>INTEGER</datatype>
+<default>NULL</default></row>
+<row name="location" null="1" autoincrement="0">
+<datatype>CHAR(128)</datatype>
+<default>NULL</default></row>
+<row name="latitude" null="1" autoincrement="0">
+<datatype>FLOAT</datatype>
+<default>NULL</default></row>
+<row name="longitude" null="1" autoincrement="0">
+<datatype>FLOAT</datatype>
+<default>NULL</default></row>
+<key type="PRIMARY" name="">
+<part>id</part>
+</key>
+</table>
 </sql>

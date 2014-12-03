@@ -321,14 +321,14 @@ class Keyword( tables.IsDescription ) :
     
 def make_pytable( w, filename, title="test" ) :
     """parses the wos reader and converts everything into an HDF5 pytable for faster access"""
-    h5file = tables.openFile( filename, mode='w', title = title )
-    table = h5file.createTable( h5file.root, 'papers', Paper, 'WOS paper records' )
-    authors = h5file.createVLArray( h5file.root, 'authors', tables.StringAtom(40) )
-    countries = h5file.createVLArray( h5file.root, 'countries', tables.StringAtom(30) )
-    cited_papers = h5file.createVLArray( h5file.root, 'cited_papers', tables.StringAtom(50) )
-    abstracts = h5file.createVLArray( h5file.root, 'abstracts', tables.VLStringAtom() )
-    categories = h5file.createVLArray( h5file.root, 'categories', tables.StringAtom(40) )
-    authortable = h5file.createTable( h5file.root, 'authortable', Author, "WOS Author data" )
+    h5file = tables.open_file( filename, mode='w', title = title )
+    table = h5file.create_table( h5file.root, 'papers', Paper, 'WOS paper records' )
+    authors = h5file.create_vlarray( h5file.root, 'authors', tables.StringAtom(40) )
+    countries = h5file.create_vlarray( h5file.root, 'countries', tables.StringAtom(30) )
+    cited_papers = h5file.create_vlarray( h5file.root, 'cited_papers', tables.StringAtom(50) )
+    abstracts = h5file.create_vlarray( h5file.root, 'abstracts', tables.VLStringAtom() )
+    categories = h5file.create_vlarray( h5file.root, 'categories', tables.StringAtom(40) )
+    authortable = h5file.create_table( h5file.root, 'authortable', Author, "WOS Author data" )
     index = 0
     for p in w.reader() :
         if p['DI'] == 'DI' :
@@ -374,7 +374,7 @@ def make_pytable( w, filename, title="test" ) :
         
     table.flush()
     authortable.flush()
-    authortable.cols.author.createIndex()
+    authortable.cols.author.create_index()
     authortable.flush()
     h5file.close()
 
