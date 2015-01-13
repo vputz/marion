@@ -33,6 +33,15 @@ def get_location( loc, cache_result = False ) :
     except e :
         return e
 
-def get_locations( locs ) :
-    # like get_location, but a list
-    pass
+def get_locations_and_unknowns( locs ) :
+    # like get_location, but a list; returns a dictionary mapping locs to lat/lon
+    # pairs AND a list of unknowns (locs)
+    locations = {}
+    unknowns = []
+    for loc in locs :
+        this_result = get_location(loc)
+        if this_result == None :
+            unknowns.append( loc )
+        else :
+            locations[loc] = this_result
+    return locations, unknowns

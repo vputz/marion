@@ -8,7 +8,7 @@ from config import basedir
 import tutorial
 from tutorial.models import User, Role
 from tutorial.models import Gps_remap, Gps_cache
-from tutorial.geocache import remap_has_key, cache_has_key, get_location
+from tutorial.geocache import remap_has_key, cache_has_key, get_location, get_locations_and_unknowns
 from io import BytesIO
 from flask import g, current_app
 from flask_security.utils import login_user, logout_user
@@ -211,10 +211,45 @@ class GPSTest( TestCase) :
         self.assertEqual( get_location( "blorfing" ), None )
         self.assertAlmostEqual( get_location( self.cache_loc )['lat'], self.cache_lat )
         self.assertAlmostEqual( get_location( "london" )['lon'], -0.1277583 )
+
+    def test_get_locations_and_unknowns( self ) :
+        locs, unks = get_locations_and_unknowns( ["University of Oxford", "blorfing"] )
+        self.assertAlmostEqual( locs["University of Oxford"]['lon'], self.cache_lon )
+        self.assertEqual( unks[0], "blorfing" )
+
+from biblio import wos_reader
         
+class BiblioTest( TestCase ):
+    """
+    Test the bibliometrics functions
+    """
+    
+    def create_app(self) :
+        return tutorial.create_app( self )
+
+    def setUp( self ):
+        """
+        """
+
+    def tearDown( self ):
+        """
+        """
+
+    def test_dict_from_addresses( self ) :
+        s1 = "[ Author, A A.; Author, A B.] Univ A"
+        d = wos_reader.dict_from_addresses( s1 )
+        self.assertTrue( 'Author, A A.' in d )
+        self.assertEqual( d['Author, A A.'], "Univ A" )
+        s2 = "[Author, A A.; Author, A B.] Univ A; [Author, A C.] Univ B"
+        d = wos_reader.dict_from_addresses( s2 )
+        self.assertTrue( 'Author, A A.' in d )
+        self.assertTrue( 'Author, A B.' in d )
+        self.assertTrue( 'Author, A C.' in d )
+        self.assertEqual( d['Author, A C.'], 'Univ B' )
+                        
 if __name__ == "__main__" :
     unittest.main()
     
-
-
+        
+        
         

@@ -74,6 +74,9 @@ from nltk import PorterStemmer
 def authorlist_from_authorfield( string ) :
     return [x.strip() for x in string.split(";")]
 
+def addresslist_from_addressfield( string ) :
+    return [x.strip() for x in string.split(";")]
+
 flatten_chain = itertools.chain.from_iterable
 
 Country_words = [x for x in """
@@ -85,18 +88,21 @@ Armenia
 Australia
 Austria
 Azerbaijan
+Bahamas
 Bangladesh
 Belgium
+Benin
 Bolivia
 Brazil
 Bulgaria
 Byelarus
-Combodia
+Cambodia
 Cameroon
 Canada
 Chile
 China
 Colombia
+Combodia
 Costa Rica
 Cote Ivoire
 Croatia
@@ -104,6 +110,7 @@ Cuba
 Cyprus
 Czech Republic
 Denmark
+Ecuador
 Egypt
 England
 Estonia
@@ -134,7 +141,9 @@ Lebanon
 Liberia
 Lithuania
 Luxembourg
+Macedonia
 Malaysia
+Mali
 Malta
 Mexico
 Moldova
@@ -144,12 +153,15 @@ Montenegro
 Morocco
 Netherlands
 New Zealand
+Nigeria
 North Korea
 Norway
 Oman
 Pakistan
+Paraguay
 Peru
 Poland
+Polynesia
 Portugal
 Qatar
 Rep Congo
@@ -178,8 +190,10 @@ Ukraine
 Uruguay
 Usa
 Uzbekistan
+Venezuela
 Vietnam
 Wales
+Zambia
 """.split("\n") if len(x) > 0 ]
 
 Country_regexes = [re.compile( x+"$" ) for x in Country_words]
@@ -206,16 +220,21 @@ def countrylist_from_addresses( s ) :
 
 def dict_from_addresses( s ) :
     """ creates an author dict from addresses """
-    r = re.compile("\[(.*?)\]\s*(.*?);")
-    pairs = r.findall( s )
+    
+    # first split on semicolons outside brackets
+    rsplit = re.compile(r"; (?=\[)")
+    s2 = rsplit.split( s )
     result = {}
-    for p in pairs :
-        names = [x.strip() for x in p[0].split(';')]
-        for name in names :
-            if name in result :
-                result[name] = result[name] + "; " + p[1]
-            else :
-                result[name] = p[1]
+    for s3 in s2 :
+        r = re.compile("\[(.*?)\]\s*(.*?)$")
+        pairs = r.findall( s3 )
+        for p in pairs :
+            names = [x.strip() for x in p[0].split(';')]
+            for name in names :
+                if name in result :
+                    result[name] = result[name] + "; " + p[1].strip()
+                else :
+                    result[name] = p[1].strip()
     return result
 
 def cited_dois( item ) :
@@ -227,7 +246,7 @@ class Wos_reader() :
         self.files = files
 
     def reader(self) :
-        return csv.DictReader( fileinput.FileInput(self.files), dialect='excel-tab' )
+        return csv.DictReader( fileinput.FileInput(self.files, openhook=fileinput.hook_encoded("utf-8")), dialect='excel-tab' )
 
     def fields( self, field ) :
         return [row[field] for row in self.reader()]
@@ -314,7 +333,8 @@ class Paper( tables.IsDescription ) :
 
 class Author( tables.IsDescription ) :
     author = tables.StringCol( 40 )
-    address = tables.StringCol( 40 )
+    address = tables.StringCol( 255 )
+    paper_index = tables.Int32Col()
 
 class Keyword( tables.IsDescription ) :
     keyword = tables.StringCol( 80 )
@@ -324,6 +344,7 @@ def make_pytable( w, filename, title="test" ) :
     h5file = tables.open_file( filename, mode='w', title = title )
     table = h5file.create_table( h5file.root, 'papers', Paper, 'WOS paper records' )
     authors = h5file.create_vlarray( h5file.root, 'authors', tables.StringAtom(40) )
+    addresses = h5file.create_vlarray( h5file.root, 'addresses', tables.StringAtom(60) )
     countries = h5file.create_vlarray( h5file.root, 'countries', tables.StringAtom(30) )
     cited_papers = h5file.create_vlarray( h5file.root, 'cited_papers', tables.StringAtom(50) )
     abstracts = h5file.create_vlarray( h5file.root, 'abstracts', tables.VLStringAtom() )
@@ -353,20 +374,14 @@ def make_pytable( w, filename, title="test" ) :
         adddir = dict_from_addresses( p['C1'] )
         for i in range( len(aulist) ) :
             a = aulist[i]
-            matches = [x for x in authortable if x['author'] == a]
             #print matches
-            if len(matches) == 0 :
-                newauthor = authortable.row
-                newauthor['author'] = a
-                if aflist[i] in adddir :
-                    newauthor['address'] = adddir[aflist[i]]
-                newauthor.append()
-                authortable.flush()
-            else :
-                for r in authortable.where( 'author == "' + a + '"' ) :
-                    if aflist[i] in adddir :
-                        r['address'] = r['address'] + adddir[aflist[i]]
-                        authortable.flush()
+            newauthor = authortable.row
+            newauthor['author'] = a
+            if aflist[i] in adddir :
+                newauthor['address'] = adddir[aflist[i]]
+            newauthor['paper_index'] = index
+            newauthor.append()
+            authortable.flush()
         countries.append(countrylist_from_addresses( p['C1'] ) )
         cited_papers.append( cited_dois( p ))
         abstracts.append( p['AB'] )
@@ -375,6 +390,7 @@ def make_pytable( w, filename, title="test" ) :
     table.flush()
     authortable.flush()
     authortable.cols.author.create_index()
+    authortable.cols.paper_index.create_index()
     authortable.flush()
     h5file.close()
 
@@ -425,6 +441,9 @@ class Wos_h5_reader() :
 
     def countries_counter( self ) :
         return Counter( flatten_chain( [x for x in self.h5.root.countries] ) )
+
+    def addresses_from_paper( self, index ) :
+        return [x['address'] for x in self.h5.root.authortable.where('paper_index == ' + str(index))]
     
     def all_cited_dois( self ) :
         return array( list(set( flatten_chain( [ x for x in self.h5.root.cited_papers ] ) ) ) )

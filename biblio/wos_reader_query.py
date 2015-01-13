@@ -27,7 +27,10 @@ def resultFromQuery( w5, q ):
     for (k,v) in q.items() :
         if v['queryType'] == 'categoricalSummary' :
             thisResult = categoricalSummaryQuery( w5, v['queryString'] )
+        elif v['queryType'] == 'paperLocationQuery' :
+            thisResult = paperLocationQuery( w5 )
         result[k] = thisResult
+        
     return result
 
 # queries return objects, not JSON (the "result" is a JSON string)
@@ -49,6 +52,17 @@ def categoricalSummaryQuery( w5, queryString ) :
     resultList = [ { "label" : x[0], "value" : x[1] } for x in result.most_common() ]
     return resultList
 
+def paperLocationQuery(w5):
+    """
+    Returns a list [ [set_of_addresses_for_paper_1], [set_of_addresses_for_paper_2] ]
+    """
+    result = []
+    for row in w5.h5.root.papers :
+        addresses = set(w5.addresses_from_paper( 0 ))
+        result.append(addresses)
+    return result
+    
+    
 # for reference, some handy queries.  This is fairly torturous, but it does work!
 """
 universities: c = categoricalSummaryQuery( w5, "list(chain(*[ [x['address'].split(',')[0] for x in w5.h5.root.authortable.where( 'author == \"{y}\"'.format(y=y))] for y in chain( *(list(z) for z in w5.h5.root.authors) ) ]))")
