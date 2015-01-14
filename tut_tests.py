@@ -151,6 +151,10 @@ class UserTest( TestCase) :
         
 class GPSTest( TestCase) :
 
+    """
+    Tests both the GPS lookup and some biblio functions that rely on it
+    """
+    
     TESTING = True
     WTF_CSRF_ENABLED = False
     SQLALCHEMY_DATABASE_URI = 'sqlite://' #/' + os.path.join(basedir, 'test.db')
@@ -217,23 +221,46 @@ class GPSTest( TestCase) :
         self.assertAlmostEqual( locs["University of Oxford"]['lon'], self.cache_lon )
         self.assertEqual( unks[0], "blorfing" )
 
-from biblio import wos_reader
+    def test_paper_lat_lon_query(self):
+        """
+        """
+        with wos_reader.open_wos_h5( "test_data/irwin.h5" ) as w5 :
+            locresults = wos_reader_query.paperLatLonQuery( w5, get_locations_and_unknowns )
+        tmp = self.maxDiff
+        self.maxDiff = None
+        self.assertDictEqual( locresults, {} )
+        self.maxDiff = tmp
+        
+from biblio import wos_reader, wos_reader_query
         
 class BiblioTest( TestCase ):
     """
     Test the bibliometrics functions
     """
-    
+
+    TESTING = True
+    WTF_CSRF_ENABLED = False
+    SQLALCHEMY_DATABASE_URI = 'sqlite://' #/' + os.path.join(basedir, 'test.db')
+    SQLALCHEMY_BINDS =  { 
+        'gps_cache' : 'sqlite:///' + os.path.join( basedir, 'test_gps_cache.db' )
+    }
+    STORAGE_BASEDIR = '/tmp'
+    SECRET_KEY = "you-will-never-guess"
+
+    _user_basedir = os.path.join( STORAGE_BASEDIR, 'user_1' )
+        
     def create_app(self) :
         return tutorial.create_app( self )
 
     def setUp( self ):
         """
         """
+        self.w5 = wos_reader.Wos_h5_reader( "test_data/putz.h5" )
 
     def tearDown( self ):
         """
         """
+        self.w5.h5.close()
 
     def test_dict_from_addresses( self ) :
         s1 = "[ Author, A A.; Author, A B.] Univ A"
@@ -246,6 +273,16 @@ class BiblioTest( TestCase ):
         self.assertTrue( 'Author, A B.' in d )
         self.assertTrue( 'Author, A C.' in d )
         self.assertEqual( d['Author, A C.'], 'Univ B' )
+
+    def test_paper_location_query( self ):
+        """
+        """
+        locresults = wos_reader_query.paperLocationQuery( self.w5 )
+        self.assertDictEqual( locresults, {b'10.1039/c0sm00164c': {b'Univ Oxford, Rudolf Peierls Ctr Theoret Phys, Oxford OX1 3NP, England'}, b'10.1140/epjst/e2010-01278-y': {b'Univ Oxford, Rudolf Peierls Ctr Theoret Phys, Oxford OX1 3NP, England'}, b'10.1016/j.chemphys.2010.04.025': {b'Univ Oxford, Rudolf Peierls Ctr Theoret Phys, Oxford OX1 3NP, England'}, b'10.1007/s10955-009-9826-x': {b'Univ Oxford, Rudolf Peierls Ctr Theoret Phys, Oxford OX1 3NP, England'}} )
+
+        
+        
+
                         
 if __name__ == "__main__" :
     unittest.main()
