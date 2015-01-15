@@ -14,18 +14,24 @@ def create_gps_cache() :
 
 with app.app_context() :
     db.create_all()
-    user_datastore = SQLAlchemyUserDatastore( db, User, Role )
-    admin = user_datastore.create_user( nickname = "admin", email="vputz@nyx.net", password="marion" )
-    db.session.add( admin )
-    db.session.commit()
-    
+
     # create queries
+    db.session.commit()
     q = Query( name = "Subject", description = "Analysis of a subject; most-published journals, authors, universities, countries", filename = "subject_query.json", template="subject_query.html" )
     db.session.add( q )
     db.session.commit()
     q = Query( name = "Country", description = "Analysis of a country; number of papers by subject, university, collaborating country", filename = "country_query.json", template="country_query.html" )
     db.session.add( q )
     db.session.commit()
+    q = Query( name = "Hexbin", description = "Hexbin-and-arcs display of papers in a dataset; keep sets small!", filename = "hexbin_query.json", template="hexbin_query.html" )
+    db.session.add(q)
+
+    # create users
+    user_datastore = SQLAlchemyUserDatastore( db, User, Role )
+    admin = user_datastore.create_user( nickname = "admin", email="vputz@nyx.net", password="marion" )
+    db.session.add( admin )
+    db.session.commit()
+    
 
     create_gps_cache()
 

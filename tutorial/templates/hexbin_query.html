@@ -1,0 +1,24 @@
+{% extends "base.html" %}
+{% block content %}
+{% for item in query_data.items() %}
+
+<h2>{{ item[0] }}</h2>
+
+{{ item[1] }}
+
+<h3>Hexbin Data</h3>
+{{ item[1]['hexbin'] }}
+
+<h3>Paper Locations</h3>
+{{ item[1]['paper_locations'] }}
+
+<h3>Failed Papers (unable to locate all addresses)</h3>
+{{ item[1]['failed_papers'] }}
+
+<h4>Locations not geolocatable</h4>
+{{ item[1]['not_located'] }}
+
+</table>
+
+{% endfor %}
+{% endblock %}

@@ -16,14 +16,14 @@ import local_conf
 def create_app( config_object ) :
     app = Flask(__name__)
     app.config.from_object(config_object)
-    app.debug = False
+    app.debug = local_conf.debug
     db.init_app(app)
     api.init_app(app)
     lm.init_app(app)
     security.init_app( app, user_datastore )
     app.register_blueprint( tutorial_bp )
 
-    if not app.debug :
+    if app.debug :
         import logging
         from logging import FileHandler
         handler = FileHandler(local_conf.logfile)

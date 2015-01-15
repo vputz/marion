@@ -1,13 +1,15 @@
 import os
-from flask import render_template, flash, redirect, session, url_for, request, g, current_app, request
+from flask import render_template, flash, redirect, session, url_for, request, g, current_app, request, flash
 from flask import Blueprint
 from flask.ext.login import login_user, logout_user, login_required
 from flask.ext.security import current_user
 #, oid
-from tutorial.forms import LoginForm, FileUploadForm, AddDatasetForm, AddCsvToDatasetForm, AddQueryToDatasetForm
-from tutorial.models import User, db, Dataset, Csv_fileref, Query, Query_instance
+from tutorial.forms import LoginForm, FileUploadForm, AddDatasetForm, AddCsvToDatasetForm, AddQueryToDatasetForm, MakeGpsRemapForm
+from tutorial.models import User, db, Dataset, Csv_fileref, Query, Query_instance, Gps_remap
 from werkzeug import secure_filename
+from tutorial.geocache import get_location
 import json
+import logging
 #, ROLE_USER, ROLE_ADMIN
 
 tutorial_bp = Blueprint('tutorial_bp', __name__, template_folder= 'templates' )
@@ -148,4 +150,44 @@ def view_query_instance( query_instance_id ) :
 @login_required
 def vis_query_instance( query_instance_id ) :
     query_instance = Query_instance.query.get( int( query_instance_id ) )
-    return render_template( "vis_"+query_instance.query_def.template, query_instance_id = query_instance_id, query_instance=query_instance )
+    return render_template( "vis_"+query_instance.query_def.template, query_instance_id = query_instance_id, query_instance=query_instance, query_data = query_instance.retrieve_data() )
+
+@tutorial_bp.route('/make_gps_remap/<remap_loc>', methods=('GET', 'POST') )
+@login_required
+def make_gps_remap( remap_loc ) :
+    """
+    
+    Arguments:
+    - `remap_loc`: string to remap
+    """
+    last_lookup_lat = request.args.get('last_lookup_lat')
+    last_lookup_lon = request.args.get('last_lookup_lon')
+    last_remap = request.args.get('last_remap')
+    remap_form = MakeGpsRemapForm()
+    if remap_form.remap_to.data == None :
+        remap_form.remap_to.data = last_remap
+    remap_form.remap_to.label = "Remap To:"
+    if remap_form.validate_on_submit() :
+        # multiple buttons; read value based on name, and switch on value
+        if remap_form.test_button.data  == True :
+            last_remap = remap_form.remap_to.data
+            last_lookup = get_location( last_remap, False )
+            last_lookup_lat = last_lookup['lat'] if last_lookup != None else None
+            last_lookup_lon = last_lookup['lon'] if last_lookup != None else None
+        elif remap_form.remap_button.data == True :
+            last_remap = remap_form.remap_to.data
+            remap = Gps_remap.query.get( remap_loc )
+            logging.warning( remap )
+            if remap == None :
+                remap = Gps_remap( from_location = remap_loc, to_location = last_remap )
+                db.session.add( remap )
+            remap.to_location = last_remap
+            db.session.commit()
+            flash("Remap for {0} added; you can close this window".format( last_remap ))
+        return redirect( url_for( 'tutorial_bp.make_gps_remap', ** { 'remap_loc' : remap_loc,
+                                                                     'last_remap' : last_remap,
+                                                                     'last_lookup_lat' : last_lookup_lat,
+                                                                     'last_lookup_lon' : last_lookup_lon
+                                                                     } ) )
+    return render_template( "make_gps_remap.html", remap_loc = remap_loc, last_lookup_lat = last_lookup_lat, last_lookup_lon = last_lookup_lon, last_remap = last_remap, remap_form = remap_form )
+

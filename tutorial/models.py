@@ -176,6 +176,33 @@ class H5_fileref( db.Model ) :
     def stored_fullpath( self ) :
         return os.path.join( self.dataset.h5_storage_path(), self.stored_filename() )
 
+class Query( db.Model ) :
+    id = db.Column( db.Integer(), primary_key = True )
+    name = db.Column( db.String( 255 ) )
+    description = db.Column( db.String( 1024 ) )
+    filename = db.Column( db.String( 1024 ) )
+    template = db.Column( db.String( 1024 ) )
+
+    def query_basepath( self ) :
+        return current_app.config['QUERIES_BASEDIR']
+    
+    def stored_query_fullpath( self ) :
+        return os.path.join( self.query_basepath(), self.filename )
+
+class Gps_remap( db.Model ) :
+    __bind_key__ = 'gps_cache'
+    from_location = db.Column( db.String( 255 ), primary_key=True )
+    to_location = db.Column( db.String( 128 ) )
+
+class Gps_cache( db.Model ) :
+    __bind_key__ = 'gps_cache'
+    location = db.Column( db.String(255), primary_key=True )
+    latitude = db.Column( db.Float( 32 ) )
+    longitude = db.Column( db.Float( 32 ) )
+
+#this is put down here to avoid circular import difficulties
+from tutorial.geocache import get_locations_and_unknowns
+    
 class Query_instance( db.Model ) :
     id = db.Column( db.Integer(), primary_key = True )
     id_dataset = db.Column( db.Integer, db.ForeignKey('dataset.id') )
@@ -195,7 +222,8 @@ class Query_instance( db.Model ) :
         if not os.path.exists( self.dataset.query_result_storage_path() ) :
             os.makedirs( self.dataset.query_result_storage_path() )
         print( self.query_def.stored_query_fullpath() )
-        run_query( self.stored_fullpath(), self.dataset.h5_file().stored_fullpath(), self.query_def.stored_query_fullpath() )
+        run_query( self.stored_fullpath(), self.dataset.h5_file().stored_fullpath(), self.query_def.stored_query_fullpath(),
+                    { 'paperLocationFunc' : get_locations_and_unknowns } )
 
     def retrieve_data(self) :
         if not self.is_current() :
@@ -210,26 +238,3 @@ class Query_instance( db.Model ) :
     def stored_fullpath( self ) :
         return os.path.join( self.dataset.query_result_storage_path(), self.stored_filename() )
 
-class Query( db.Model ) :
-    id = db.Column( db.Integer(), primary_key = True )
-    name = db.Column( db.String( 255 ) )
-    description = db.Column( db.String( 1024 ) )
-    filename = db.Column( db.String( 1024 ) )
-    template = db.Column( db.String( 1024 ) )
-
-    def query_basepath( self ) :
-        return current_app.config['QUERIES_BASEDIR']
-    
-    def stored_query_fullpath( self ) :
-        return os.path.join( self.query_basepath(), self.filename )
-
-class Gps_remap( db.Model ) :
-    __bind_key__ = 'gps_cache'
-    from_location = db.Column( db.String( 128 ), primary_key=True )
-    to_location = db.Column( db.String( 128 ) )
-
-class Gps_cache( db.Model ) :
-    __bind_key__ = 'gps_cache'
-    location = db.Column( db.String(128), primary_key=True )
-    latitude = db.Column( db.Float( 32 ) )
-    longitude = db.Column( db.Float( 32 ) )

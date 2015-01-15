@@ -17,11 +17,13 @@ Example query:
 }
 """
 
-def resultFromQuery( w5, q ):
+def resultFromQuery( w5, q, context ):
     """
     Given a wos_h5 and a query dict, run all the query elements and return a result,
     which is a dictionary of the query keys and the result objects.  Should be
     changed to JSON for storage
+
+    context: dictionary of helpers/functions
     """
     result = {}
     for (k,v) in q.items() :
@@ -29,8 +31,8 @@ def resultFromQuery( w5, q ):
             thisResult = categoricalSummaryQuery( w5, v['queryString'] )
         elif v['queryType'] == 'paperLocationQuery' :
             thisResult = paperLocationQuery( w5 )
-        elif v['queryType'] == 'paperLatLonQuery' :
-            thisResult = paperLatLonQuery( w5, v['paperLocationFunc'] )
+        elif v['queryType'] == 'paperHexbinQuery' :
+            thisResult = paperHexbinQuery( w5, context['paperLocationFunc'] )
         result[k] = thisResult
         
     return result
@@ -88,14 +90,17 @@ def paperLatLonQuery( w5, paperLocationFunc ):
 
         locs, unknowns = paperLocationFunc( addresses )
         if len (unknowns) != 0 :
-            result['failed_papers'].append( doi )
-            result['not_located'].extend( unknowns )
+            result['failed_papers'].append( doi.decode('utf-8') )
+            result['not_located'].extend( [x.decode('utf-8') for x in unknowns] )
         else :
             this_result = { "nodes" : {}, "edges" : {} }
             node_index = 0
-            latlngs = [ locs[x] for x in addresses ]
+            latlngs = [ (locs[x], x) for x in addresses ]
             for latlng in latlngs :
-                this_result['nodes'][node_index] = { 'lat' : latlng['lat'], 'lon' : latlng['lon'], 'text' : doi, 'val' : 0 }
+                this_result['nodes'][node_index] = { 'lat' : latlng[0]['lat'],
+                                                    'lon' : latlng[0]['lon'],
+                                                    'text' : doi.decode("utf-8") + ": " + latlng[1].decode('utf-8'),
+                                                    'val' : 0 }
                 node_index = node_index + 1
             # now build the edges; this allows no self-loops
             edge_combos = list(combinations( range( node_index ), 2 ))
@@ -103,15 +108,55 @@ def paperLatLonQuery( w5, paperLocationFunc ):
             for edge in edge_combos:
                 this_result['edges'][edge_index] = { 'from' : edge_combos[edge_index][0],
                                                      'to' : edge_combos[edge_index][1],
-                                                     'text' : doi,
+                                                     'text' : doi.decode("utf-8"),
                                                      'val' : 0 }
                 edge_index = edge_index + 1
-            result['paper_locations'][doi] = this_result
+            result['paper_locations'][doi.decode('utf-8')] = this_result
     # just compress the "not locateds" into a set
-    result['not_located'] = set(result['not_located'])
+    result['not_located'] = list(set(result['not_located']))
     return result
                 
-                
+def paperHexbinQuery(w5, paperLocationFunc):
+    """
+    
+    Arguments:
+    - `w5`: h5 file
+    - `paperLocationFunc`: as in paperLatLonQuery
+
+    The reason for this func is that paperLatLonQuery is a better query in terms of
+    what it returns, but the current javascript hexBin code requires data in the form
+
+    nodes: [ { lat: float, lng: float, text: str, pubcount: int }... ]
+    edges: [ { fromlat: float tolat: float fromlng: float tolng: float, weight: 1 } ]
+
+    So this function basically does a paperLatLonQuery, massages the data into hexbin format,
+    and adds that as a member, ie
+    { paper_locations: (as above),
+      hexbin: { nodes: nodes, edges: edges },
+      failed_papers : [doi...],
+      not_located : [string...] }
+
+    A little cumbersome and we may change later
+    """
+    data = paperLatLonQuery( w5, paperLocationFunc )
+    hexbin = { "nodes" : [], "edges" : [] }
+    for doi,paper in data['paper_locations'].items() :
+        # adding the nodes is easy
+        hexbin['nodes'].extend( [ { "lat" : x['lat'],
+                                "lng" : x['lon'],
+                                'text': x['text'],
+                                'pubcount': 1 } for x in paper['nodes'].values() ] )
+        # the edges take just a little bit more
+        for edge in paper['edges'].values() :
+            fromnode = paper['nodes'][edge['from']]
+            tonode = paper['nodes'][edge['to']]
+            hexbin['edges'].append( { 'fromlat' : fromnode['lat'],
+                                      'fromlng' : fromnode['lon'],
+                                      'tolat' : tonode['lat'],
+                                      'tolng' : tonode['lon'],
+                                      'weight' : 1 } )
+    data['hexbin'] = hexbin
+    return data
     
 
 # for reference, some handy queries.  This is fairly torturous, but it does work!
@@ -119,15 +164,17 @@ def paperLatLonQuery( w5, paperLocationFunc ):
 universities: c = categoricalSummaryQuery( w5, "list(chain(*[ [x['address'].split(',')[0] for x in w5.h5.root.authortable.where( 'author == \"{y}\"'.format(y=y))] for y in chain( *(list(z) for z in w5.h5.root.authors) ) ]))")
 """
 
-def run_query( toFile, w5File, queryFile ) :
+def run_query( toFile, w5File, queryFile, context ) :
     """
     Run the query stored in JSON file queryFile on the h5 file noted by w5File,
     and store the result in JSON file toFile
+
+    context: dictionary of additional things to send
     """
     q = json.loads( open(queryFile, "r").read() )
     result = None
     with open_wos_h5( w5File ) as w5 :
-        result = resultFromQuery( w5, q )
+        result = resultFromQuery( w5, q, context )
     with open( toFile, "w" ) as outFile :
         outFile.write( json.dumps( result ) )
 

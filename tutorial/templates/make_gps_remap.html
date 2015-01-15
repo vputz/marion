@@ -1,0 +1,37 @@
+{% extends "base.html" %}
+<head>
+</head>
+    
+{% block content %}
+{% from "_formhelpers.html" import render_field %}
+<h2>
+Defining a remap for location
+</h2>
+<h3>
+  {{ remap_loc }}
+</h3>
+  
+
+<form  action="{{ url_for('tutorial_bp.make_gps_remap', **{ 'remap_loc' : remap_loc, 'last_remap' : last_remap, 'last_lookup_lat' : last_lookup_lat, 'last_lookup_lon' : last_lookup_lon }) }}" method="POST" enctype="multipart/form-data">
+  {{remap_form.csrf_token }}
+  Enter a location to try to remap to:
+  {{ render_field(remap_form.remap_to) }}
+  {{ render_field(remap_form.test_button) }}
+  <p>
+    {% if last_lookup_lat != None and last_lookup_lon != None %}
+
+    
+{{ last_remap }} maps to: ({{ last_lookup_lat }}, {{ last_lookup_lon }})
+<p>
+    <iframe width="600" height="450" frameborder="0" style="border:0"
+src = "https://www.google.com/maps/embed/v1/place?q={{last_remap}}&key=AIzaSyCUYK80IoDXUbX37v6E9br6oRrOEtOlvW8&zoom=10"></iframe>
+    <!-- google maps embed api doesn't seem to like center and place in the same map -->
+  <p>
+    If this is correct, approve by clicking this button:
+    {{ render_field( remap_form.remap_button ) }}
+    {% endif %}
+<hr>
+</form>
+
+
+{% endblock %}

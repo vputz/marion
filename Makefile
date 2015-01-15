@@ -1,5 +1,5 @@
 test :
-	nosetests tut_tests.py
+	nosetests tut_tests.py --processes=-1
 
 publish :
 	rsync -ar -e ssh tutorial thingotr@thingotron.com:marion

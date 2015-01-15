@@ -1,7 +1,7 @@
 from flask.ext.wtf import Form
 
 from flask_wtf.file import FileField, FileRequired
-from wtforms import StringField, BooleanField, SelectField
+from wtforms import StringField, BooleanField, SelectField, SubmitField
 from wtforms.validators import DataRequired, Length
 
 
@@ -21,3 +21,8 @@ class AddCsvToDatasetForm( Form ) :
 
 class AddQueryToDatasetForm( Form ) :
     query = SelectField('Query', coerce=int)
+
+class MakeGpsRemapForm(Form):
+    remap_to  = StringField("remap_to", validators=[Length(min=0, max=255),DataRequired()])
+    test_button = SubmitField("Test by Google Geolocation:")
+    remap_button = SubmitField("Yes, approve this remap:")
