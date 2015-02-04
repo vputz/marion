@@ -7,6 +7,8 @@ from flask.ext.sqlalchemy import SQLAlchemy
 from datetime import datetime
 from biblio.wos_reader import open_wos_tab, make_pytable
 from biblio.wos_reader_query import run_query
+from biblio import csv_queries
+import csv
 
 db = SQLAlchemy()
 
@@ -29,7 +31,7 @@ class User(db.Model, UserMixin ) :
     roles = db.relationship( 'Role', secondary=roles_users,
                              backref = db. backref('users', lazy='dynamic') )
     datasets = db.relationship("Dataset", backref='owner', lazy='dynamic')
-    
+    tabdata_datasets = db.relationship("Tabdata_dataset", backref='owner', lazy='dynamic' )
 
     def storage_path( self ) :
         return os.path.join( current_app.config['STORAGE_BASEDIR'], 'user_'+str(self.id) )
@@ -65,6 +67,20 @@ class User(db.Model, UserMixin ) :
                           date_created=datetime.utcnow() )
         db.session.add(new_set)
         db.session.commit()
+
+    def add_tabdata_dataset( self, description, werkzeug_file ):
+        """
+        
+        Arguments:
+        - `self`:
+        - `description`: short description
+        - `werkzeug_file`: file for upload; this can be blank but that will be awkward
+        """
+        new_set = Tabdata_dataset( description=description, owner=self, date_created = datetime.utcnow() )
+        db.session.add( new_set )
+        db.session.commit()
+        new_set.add_csv( werkzeug_file )
+        return new_set
 
 class Dataset(db.Model) :
     id = db.Column( db.Integer, primary_key=True )
@@ -201,7 +217,7 @@ class Gps_cache( db.Model ) :
     longitude = db.Column( db.Float( 32 ) )
 
 #this is put down here to avoid circular import difficulties
-from tutorial.geocache import get_locations_and_unknowns
+from tutorial.geocache import get_locations_and_unknowns, get_location
     
 class Query_instance( db.Model ) :
     id = db.Column( db.Integer(), primary_key = True )
@@ -238,3 +254,90 @@ class Query_instance( db.Model ) :
     def stored_fullpath( self ) :
         return os.path.join( self.dataset.query_result_storage_path(), self.stored_filename() )
 
+
+class Tabdata_dataset( db.Model ):
+    """
+    Incorporates the idea of a tabular dataset (csv, excel, etc).  Initially this just supports CSV
+    """
+    
+    id = db.Column( db.Integer(), primary_key = True )
+    id_user = db.Column( db.Integer, db.ForeignKey('user.id') )
+    description = db.Column( db.String( 1024 ) )
+    date_created = db.Column( db.DateTime() )
+    query_instances = db.relationship( "Tabdata_query_instance", backref="dataset", lazy="dynamic")
+
+    def tab_storage_path( self ) :
+        return os.path.join( self.owner.storage_path(), 'tab_dataset_'+str(self.id),'tabs' )
+
+    def stored_filename( self ) :
+        return "tab_" + str( self.id )
+
+    def stored_fullpath( self ) :
+        return os.path.join( self.tab_storage_path(), self.stored_filename() )
+    
+    def add_csv( self, werkzeug_file ):
+        """
+        Sets the file for this tab data.  This will overwrite the existing file and
+        possibly invalidate the queries
+
+        TODO: some verification of file (where to do this?)
+        """
+        if not os.path.exists( self.tab_storage_path() ) :
+            os.makedirs( self.tab_storage_path() )
+        werkzeug_file.save( self.stored_fullpath() )
+        date_created=datetime.utcnow()
+
+    def column_choices( self ) :
+        result = []
+        with open( self.stored_fullpath() ) as csvfile :
+            reader = csv.reader(csvfile)
+            row = next(reader)
+            for i in range( len(row) ) :
+                result.append( (i, row[i] ) )
+        return result
+        
+    def add_query_instance( self, tabdata_query_id, parameters ) :
+        q = Tabdata_query.query.get( tabdata_query_id )
+        qi = Tabdata_query_instance( dataset=self, query_def=q, parameters = parameters )
+        db.session.add(qi)
+        db.session.commit() 
+
+        
+class Tabdata_query( db.Model ):
+    """
+    A tab-data query.  Tabdata queries are somewhat simpler than full dataset queries as it is assumed
+    that much of the data manipulation has been done already; as a result there is no "stored query text"
+    but we do have a JSON dictionary "parameters" list which primarily will be used to select columns out
+    of the csv file for various variables.
+    """
+
+    id = db.Column( db.Integer(), primary_key = True )
+    name = db.Column( db.String( 255 ) )
+    description = db.Column( db.String( 1024 ) )
+    parameters = db.Column( db.String( 2048 ) )
+    template = db.Column( db.String( 1024 ) )
+
+class Tabdata_query_instance( db.Model ):
+    """
+    The tab data query instance; contains a JSON dictionary in "parameters" matching the parameters
+    of the query
+    """
+    id = db.Column( db.Integer(), primary_key = True )
+    id_tabdata_dataset = db.Column( db.Integer, db.ForeignKey('tabdata_dataset.id') )
+    id_tabdata_query = db.Column( db.Integer, db.ForeignKey('tabdata_query.id' ) )
+    parameters = db.Column( db.String( 2048 ) )
+    query_def = db.relationship("Tabdata_query")
+        
+    def retrieve_data( self ):
+        """
+        Retrieve the data from the query, although in this case we shouldn't have to render
+        the data to a file; these should be fast queries (we hope)
+        Arguments:
+        - `self`:
+        """
+        # switch based on the name of the query--ugly, but for now we'll do it
+        if self.query_def.name == "Tabdata_hexbin" :
+            json_data = csv_queries.location_and_value( self.dataset.stored_fullpath(), json.loads(self.parameters), get_location )
+        else :
+            json_data = "{}"
+        return json_data

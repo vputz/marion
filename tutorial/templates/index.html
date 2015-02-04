@@ -1,11 +1,22 @@
 {% extends "base.html" %}
 {% block content %}
-    {% if datasets|length %}
-    <h1>Hi, {{ user.nickname }}!</h1>
-    {% for dataset in datasets %}
-    <div><p><a href="{{ url_for('tutorial_bp.edit_dataset', **{'dataset_id' : dataset.id}) }}">{{ dataset.date_created }}</a>: <b>{{ dataset.description }}</b></p></div>
-    {% endfor %}
-    {% else %}
-    You have no datasets; click <a href="{{ url_for('tutorial_bp.add_dataset') }}">here</a> to add one.
-    {% endif %}
+<h1>Hi, {{ user.nickname }}!</h1>
+<h2>Bibliometric Datasets</h2>
+{% if datasets|length %}
+{% for dataset in datasets %}
+<div><p><a href="{{ url_for('tutorial_bp.edit_dataset', **{'dataset_id' : dataset.id}) }}">{{ dataset.date_created }}</a>: <b>{{ dataset.description }}</b></p></div>
+{% endfor %}
+Click <a href="{{ url_for('tutorial_bp.add_dataset') }}">here</a> to add a dataset.
+{% else %}
+You have no datasets; click <a href="{{ url_for('tutorial_bp.add_dataset') }}">here</a> to add one.
+{% endif %}
+<h2>Tabular Data (CSV) Datasets</h2>
+{% if tabdata_datasets | length %}
+{% for tabdata_dataset in tabdata_datasets %}
+<div><p><a href="{{ url_for('tutorial_bp.edit_tabdata_dataset', **{'tabdata_dataset_id' : tabdata_dataset.id}) }}">{{ tabdata_dataset.date_created }}</a>: {{ tabdata_dataset.description }} </p></div>
+{% endfor %}
+Click <a href="{{ url_for('tutorial_bp.add_tabdata_dataset') }}">here</a> to add a tabular (CSV) dataset.
+{% else %}
+You have no tabular datasets; click <a href="{{ url_for('tutorial_bp.add_tabdata_dataset') }}">here</a> to add a tabular (CSV) dataset.
+{% endif %}
 {% endblock %}

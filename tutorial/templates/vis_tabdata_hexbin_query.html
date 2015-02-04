@@ -1,0 +1,194 @@
+{% extends "base.html" %}
+{% block content %}
+
+<html>
+<head>
+<link rel="stylesheet" href="http://cdn.leafletjs.com/leaflet-0.6.4/leaflet.css" />
+ <!--[if lte IE 8]>
+     <link rel="stylesheet" href="http://cdn.leafletjs.com/leaflet-0.6.4/leaflet.ie.css" />
+ <![endif]-->
+<link rel="stylesheet" href="{{ url_for('static', filename='css/MarkerCluster.css') }}" />
+<link rel="stylesheet" href="{{ url_for('static', filename='css/MarkerCluster.Default.css') }}" />
+<style>
+    .myCluster {
+	width: 100px;
+	height: 40px;
+	background-color: greenyellow;
+	text-align: center;
+	font-size: 12px;
+	background-clip: padding-box;
+	border-radius: 10px;
+    }
+</style>
+</head>
+<body>
+
+  <h1> {{ tabdata_query_instance.dataset.description }} </h1>
+  <h2> Map </h2>
+  <div id="map" style="height: 800px;width: 1000px"></div>
+  <h2> Unlocatable Locations </h2>
+  <table>
+    {% for loc in query_data['not_located'] %}
+    <tr><td> <a href="{{ url_for( 'tutorial_bp.make_gps_remap', **{ 'remap_loc' : loc} ) }}"> {{ loc }} </a> </td></tr>
+    {% endfor %}
+  </table>
+
+<script src="http://cdn.leafletjs.com/leaflet-0.6.4/leaflet.js"></script>
+<script src="http://d3js.org/d3.v3.min.js"></script>
+<script src="http://d3js.org/d3.hexbin.v0.js"></script>
+<script src="{{ url_for('static', filename='javascript/colorbrewer.js') }}"></script>
+<script src="{{ url_for('static', filename='javascript/leaflet.hexbin-layer.js') }}"></script>
+<script src="{{ url_for('static', filename='javascript/leaflet-providers.js') }}"></script>
+<script src="{{ url_for('static', filename='javascript/arc.js') }}"></script>
+<!--one source of info:jeromegagnonvoyer.wordpress.com/2013/04/17/creating-a-data-visualization-tool-using-d3-js-crossfilter-and-leaflet-js/ -->
+<script>
+var map = L.map("map").setView([51.505, -0], 5);
+<!--so that adds a map; now we must add a tile layer, hitns from sajjad.in/2012/01/mapquest-tiles-through-leaflet-js -->
+<!--var mapquestUrl = 'http://{s}.mqcdn.com/tiles/1.0.0/osm/{z}/{x}/{y}.png',-->
+<!--subDomains = ['otile1','otile2','otile3','otile4'],-->
+<!--mapquestAttrib = 'Data, imagery and map information provided by <a href="http://open.mapquest.co.uk" target="_blank">MapQuest</a>, <a href="http://www.openstreetmap.org/" target="_blank">OpenStreetMap</a> and contributors.'-->
+<!--var mapquest = new L.TileLayer(mapquestUrl, {maxZoom: 18, attribution: mapquestAttrib, subdomains: subDomains})-->
+<!--    .addTo(map); -->
+
+
+//L.tileLayer.provider("Esri.NatGeoWorldMap").addTo(map);
+L.tileLayer.provider("MapQuestOpen.Aerial").addTo(map);
+function readable_val( value ) {
+    if ( value > 1000000 ) {
+	result = (value / 1000000).toFixed(1) + "m";
+    }
+    else if ( value > 1000 ) {
+	result = ( value/1000 ).toFixed(1) + "k";
+    }
+    else {
+	result = value.toFixed(1);
+    }
+    return result;
+};
+
+function clusterValue( cluster ) {
+    var total = 0;
+    cluster.getAllChildMarkers().forEach( function(d) {
+	total += d.options['value'];
+    });
+    return total;
+}
+
+
+
+
+var datafile = "pnodes.json"
+var edgefile = "pedges.json"
+
+function totalval( json ) {
+    result = 0;
+    json.forEach( function(d) {
+	result += d['value'];
+    });
+    return result;
+}
+
+function maxval( d ) {
+    result = 0;
+    d.forEach( function(d) {
+	result = Math.max( result, d['value']);
+    });
+    return result;
+}
+
+//this hexbin from http://bl.ocks.org/tnightingale/4668062
+var max, scale;
+var classes = 9;
+var scheme = colorbrewer["YlOrRd"][classes];
+var color;
+
+function hex_style( hexagons ) {
+    console.flush();
+    // maintain a density scale relative to initial zoom level
+    if (!(max && scale)) { 
+	max = d3.max( hexagons.data(), function(d) { return d.length; });
+	scale = d3.scale.quantize()
+	    .domain([0, max])
+	    .range(d3.range(classes));
+    }
+
+    hexagons
+    .attr("stroke", scheme[classes-1])
+    .attr("fill-opacity", 0.7)
+
+    .attr("fill", function(d) {
+	//console.log(totalval(d));
+	//console.flush();
+	return color(totalval(d));//return scheme[scale(d.length)];
+    })
+    .append("svg:title").text( function(d) { result = ""; d.forEach( function(d2) { result += d2["text"]+ "\n"; }); return result; } );
+}
+
+function itemlist( dictionary ) {
+    var result = [];
+    for (var key in dictionary) {
+	if ( dictionary.hasOwnProperty(key) ) {
+	    entry = dictionary[key];
+	    entry['lng'] = entry['lon'];  // hack because hexbin expects lng instead of lon
+	    result.push(dictionary[key]);
+	}
+    }
+    return result;
+}
+
+data = {{query_data| tojson}};
+nodes = itemlist(data['nodes'])
+console.log("Maxval: " + maxval(nodes));
+console.log(nodes)
+color = d3.scale.sqrt()
+    .domain([1, maxval( nodes )])
+    .range(["palegreen","red"]);
+
+L.hexLayer( nodes, {
+    applyStyle: hex_style
+}).addTo(map);
+
+//    edges = d['hexbin']['hexbin']['edges'];
+//    edges.forEach( function(d) {
+	//console.log(d);
+	//console.flush();
+//	if ( ( d.fromlng != d.tolng ) || (d.fromlat != d.tolat) ) {
+//	    var from = new arc.Coord( d.fromlng, d.fromlat );
+//	    var to = new arc.Coord( d.tolng, d.tolat );
+//	    //console.log(to); console.flush();
+//	    var greatCircle = new arc.GreatCircle( from, to, {} );
+//	    var gc = greatCircle.Arc(npoints);
+//	    var myStyle = { "color" : "#ffffff", "weight" : d.weight, "opacity" : 0.5 };
+//	    var geojson_feature = gc.json();
+//	    var line = new L.geoJson( geojson_feature,  {style: myStyle} ).addTo(map);
+//	    //line.addData( geojson_feature );
+//	    map.addLayer(line);
+//	}
+//    })
+//});
+
+var npoints = 50;
+
+//d3.json( edgefile, function( error, json ) {
+// json.forEach( function(d) {
+//   console.log(d);
+//   console.flush();
+//   if ( ( d.fromlng != d.tolng ) || (d.fromlat != d.tolat) ) {
+//     var from = new arc.Coord( d.fromlng, d.fromlat );
+//     var to = new arc.Coord( d.tolng, d.tolat );
+//   console.log(to); console.flush();
+//     var greatCircle = new arc.GreatCircle( from, to, {} );
+//     var gc = greatCircle.Arc(npoints);
+//     var myStyle = { "color" : "#ffffff", "weight" : d.weight, "opacity" : 0.5 };
+//     var geojson_feature = gc.json();
+//     var line = new L.geoJson( geojson_feature,  {style: myStyle} ).addTo(map);
+//     //line.addData( geojson_feature );
+//     map.addLayer(line);
+//}
+// })
+// })
+
+</script>
+</body>
+
+{% endblock %}

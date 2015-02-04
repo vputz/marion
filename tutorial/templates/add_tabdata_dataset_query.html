@@ -1,0 +1,20 @@
+{% extends "base.html" %}
+
+{% block content %}
+{% from "_formhelpers.html" import render_field %}
+<h2>
+Adding query {{tabdata_query.description}} to {{ tabdata_dataset.description }}
+</h2>
+<hr>
+<form action="{{ url_for('tutorial_bp.add_tabdata_dataset_query', **{ 'tabdata_dataset_id' : tabdata_dataset.id, 'tabdata_query_id' : tabdata_query.id } ) }}" method="POST" enctype="multipart/form-data">
+  {{ form.csrf_token }}
+  {% for field in form.parameterFields %}
+  {{ render_field(field) }}
+  {% endfor %}
+  <p>
+  {{ form.submitButton }}
+</form>
+
+
+
+{% endblock %}

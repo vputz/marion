@@ -1,0 +1,10 @@
+{% extends "base.html" %}
+{% block content %}
+
+<h3>Hexbin Data</h3>
+{{ query_data['nodes'] }}
+
+<h3>Locations not geolocatable</h3>
+{{ query_data['not_located'] }}
+
+{% endblock %}

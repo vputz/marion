@@ -26,12 +26,16 @@ with app.app_context() :
     q = Query( name = "Hexbin", description = "Hexbin-and-arcs display of papers in a dataset; keep sets small!", filename = "hexbin_query.json", template="hexbin_query.html" )
     db.session.add(q)
 
-    # create users
+    # create tabdata queries
+    q = Tabdata_query( name="Tabdata_hexbin", description="Hexbin of geographical data", parameters='{ "locationColumn" : 0, "valueColumn" : 0, "textColumn" : 0 }', template="tabdata_hexbin_query.html" )
+    db.session.add(q)
+    db.session.commit()
+
+        # create users
     user_datastore = SQLAlchemyUserDatastore( db, User, Role )
     admin = user_datastore.create_user( nickname = "admin", email="vputz@nyx.net", password="marion" )
     db.session.add( admin )
     db.session.commit()
-    
 
     create_gps_cache()
 

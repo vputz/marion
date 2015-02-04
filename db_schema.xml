@@ -152,7 +152,7 @@
 <part>id</part>
 </key>
 </table>
-<table x="607" y="528" name="Query">
+<table x="607" y="528" name="Query_instance">
 <row name="id" null="1" autoincrement="1">
 <datatype>INTEGER</datatype>
 <default>NULL</default></row>
@@ -162,7 +162,7 @@
 </row>
 <row name="id_query_request" null="1" autoincrement="0">
 <datatype>INTEGER</datatype>
-<default>NULL</default><relation table="Query_request" row="id" />
+<default>NULL</default><relation table="Query" row="id" />
 </row>
 <key type="PRIMARY" name="">
 <part>id</part>
@@ -171,7 +171,7 @@
 <part>id_query_request</part>
 </key>
 </table>
-<table x="801" y="530" name="Query_request">
+<table x="804" y="496" name="Query">
 <row name="id" null="1" autoincrement="1">
 <datatype>INTEGER</datatype>
 <default>NULL</default></row>
@@ -183,6 +183,9 @@
 <default>NULL</default></row>
 <row name="filename" null="1" autoincrement="0">
 <datatype>CHAR(1024)</datatype>
+<default>NULL</default></row>
+<row name="template" null="1" autoincrement="0">
+<datatype>VARCHAR(1024)</datatype>
 <default>NULL</default></row>
 <key type="PRIMARY" name="">
 <part>id</part>
@@ -214,6 +217,64 @@
 <default>NULL</default></row>
 <row name="longitude" null="1" autoincrement="0">
 <datatype>FLOAT</datatype>
+<default>NULL</default></row>
+<key type="PRIMARY" name="">
+<part>id</part>
+</key>
+</table>
+<table x="386" y="647" name="Tabdata_dataset">
+<row name="id" null="1" autoincrement="1">
+<datatype>INTEGER</datatype>
+<default>NULL</default></row>
+<row name="id_user" null="1" autoincrement="0">
+<datatype>INTEGER</datatype>
+<default>NULL</default><relation table="User" row="id" />
+</row>
+<row name="filename" null="1" autoincrement="0">
+<datatype>VARCHAR(1024)</datatype>
+<default>NULL</default></row>
+<row name="date_created" null="1" autoincrement="0">
+<datatype>DATETIME</datatype>
+<default>NULL</default></row>
+<key type="PRIMARY" name="">
+<part>id</part>
+</key>
+</table>
+<table x="876" y="647" name="Tabdata_query">
+<row name="id" null="1" autoincrement="1">
+<datatype>INTEGER</datatype>
+<default>NULL</default></row>
+<row name="name" null="1" autoincrement="0">
+<datatype>VARCHAR(255)</datatype>
+<default>NULL</default></row>
+<row name="description" null="1" autoincrement="0">
+<datatype>VARCHAR(1024)</datatype>
+<default>NULL</default></row>
+<row name="parameters" null="1" autoincrement="0">
+<datatype>VARCHAR(2048)</datatype>
+<default>NULL</default><comment>Intended as JSON field for parameter:default dictionary</comment>
+</row>
+<row name="template" null="1" autoincrement="0">
+<datatype>VARCHAR(1024)</datatype>
+<default>NULL</default></row>
+<key type="PRIMARY" name="">
+<part>id</part>
+</key>
+</table>
+<table x="596" y="646" name="Tabdata_query_instance">
+<row name="id" null="1" autoincrement="1">
+<datatype>INTEGER</datatype>
+<default>NULL</default></row>
+<row name="id_Tabdata_dataset" null="1" autoincrement="0">
+<datatype>INTEGER</datatype>
+<default>NULL</default><relation table="Tabdata_dataset" row="id" />
+</row>
+<row name="id_Tabdata_query_request" null="1" autoincrement="0">
+<datatype>INTEGER</datatype>
+<default>NULL</default><relation table="Tabdata_query" row="id" />
+</row>
+<row name="parameters" null="1" autoincrement="0">
+<datatype>VARCHAR(2048)</datatype>
 <default>NULL</default></row>
 <key type="PRIMARY" name="">
 <part>id</part>

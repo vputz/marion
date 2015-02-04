@@ -4,8 +4,11 @@ from flask import Blueprint
 from flask.ext.login import login_user, logout_user, login_required
 from flask.ext.security import current_user
 #, oid
-from tutorial.forms import LoginForm, FileUploadForm, AddDatasetForm, AddCsvToDatasetForm, AddQueryToDatasetForm, MakeGpsRemapForm
+from tutorial.forms import LoginForm, FileUploadForm, AddDatasetForm, AddCsvToDatasetForm
+from tutorial.forms import AddQueryToDatasetForm, MakeGpsRemapForm, AddTabdataDatasetForm, AddTabdataQueryForm
+from tutorial.forms import ChangeTabdataDatasetCsvForm, EditTabdataDatasetForm
 from tutorial.models import User, db, Dataset, Csv_fileref, Query, Query_instance, Gps_remap
+from tutorial.models import Tabdata_dataset, Tabdata_query, Tabdata_query_instance
 from werkzeug import secure_filename
 from tutorial.geocache import get_location
 import json
@@ -68,7 +71,9 @@ def index() :
     user = g.user
     return render_template('index.html',
                            title='Home',
-                           user=user, datasets= list(user.datasets) )
+                           user=user,
+                           datasets= list(user.datasets),
+                           tabdata_datasets=list( user.tabdata_datasets ) )
 
 @tutorial_bp.route('/upload_file/', methods=("GET","POST") )
 @login_required
@@ -77,7 +82,7 @@ def upload_file() :
     filename = None
     if form.validate_on_submit() :
         current_user.add_file( form.file_1.data )
-        return redirect(url_for('tutorial_bp.index'))
+        return redirect(url_for('index'))
     else :
         filename = None
     #print( "Errors: " + str( form.errors ))
@@ -94,6 +99,83 @@ def add_dataset() :
         pass
     return render_template('add_dataset.html', form=form )
 
+@tutorial_bp.route('/add_tabdata_dataset/', methods=('GET', 'POST') )
+@login_required
+def add_tabdata_dataset():
+    """
+    adds a tabular (CSV) dataset
+    """
+    form = AddTabdataDatasetForm()
+    if form.validate_on_submit() :
+        new_set = current_user.add_tabdata_dataset( form.descriptionField.data, form.file_1.data )
+        return redirect( url_for( 'tutorial_bp.edit_tabdata_dataset', **{ 'tabdata_dataset_id' : new_set.id } ) )
+    else :
+        flash( "Error in form validation: " + repr(form.errors) )
+    return render_template( 'add_tabdata_dataset.html', form=form )
+
+@tutorial_bp.route('/edit_tabdata_dataset/<tabdata_dataset_id>', methods=('GET', 'POST') )
+@login_required
+def edit_tabdata_dataset( tabdata_dataset_id ):
+    """
+    Edits an existing dataset, allowing change of description and CSV file
+    """
+    dataset = Tabdata_dataset.query.get(int(tabdata_dataset_id) )
+    upload_form = ChangeTabdataDatasetCsvForm()
+    edit_form = EditTabdataDatasetForm()
+    add_query_form = AddQueryToDatasetForm()
+    add_query_form.query.choices = [(q.id, q.name) for q in Tabdata_query.query.order_by('name')]
+    if upload_form.validate_on_submit() :
+        dataset.add_csv( upload_form.file_1.data )
+        flash("File updated")
+        return redirect( url_for( 'tutorial_bp.edit_tabdata_dataset', **{ 'tabdata_dataset_id' : dataset.id } ) )
+    else :
+        if len( upload_form.errors ) > 0 :
+            flash("Upload form error : " + repr( upload_form.errors ) )
+    if edit_form.validate_on_submit() :
+        if edit_form.verifyDeleteCheckbox.data == True and edit_form.delete_button.data == True :
+            db.session.delete( dataset )
+            db.session.commit()
+            return redirect( url_for( 'tutorial_bp.index' ) )
+    else :
+        if len ( edit_form.errors ) > 0 :
+            flash("Edit form error : " + repr( edit_form.errors ) )
+    if add_query_form.validate_on_submit() :
+        #dataset.add_query_instance( add_query_form.query.data )
+        flash("Tabdata query added!")
+        return redirect( url_for( 'tutorial_bp.add_tabdata_dataset_query', **{ 'tabdata_dataset_id' : dataset.id,
+                                                                               'tabdata_query_id' : add_query_form.query.data } ) )
+    else :
+        if len ( add_query_form.errors ) > 0 :
+            flash("Add query form error: " + repr( add_query_form.errors ) )
+    return render_template( 'edit_tabdata_dataset.html',
+                            tabdata_dataset = dataset,
+                            upload_form = upload_form,
+                            add_query_form = add_query_form,
+                            edit_form=edit_form )
+
+@tutorial_bp.route('/add_tabdata_dataset_query/<tabdata_dataset_id>_add_<tabdata_query_id>', methods=("GET","POST") )
+@login_required
+def add_tabdata_dataset_query( tabdata_dataset_id, tabdata_query_id ):
+    """
+    """
+    dataset = Tabdata_dataset.query.get(int(tabdata_dataset_id))
+    query = Tabdata_query.query.get(int(tabdata_query_id))
+    parameters = json.loads( query.parameters )
+
+    form = AddTabdataQueryForm( parameterFields = [ {'name' : key, 'choices' : dataset.column_choices() } for key,value in parameters.items() ] )
+    form.setParameterChoices( parameters, dataset.column_choices() )
+
+    if form.submitButton.data == True :
+        instance_parameters = {}
+        for i in range( len( form.parameterFields ) ) :
+            instance_parameters[ form.parameterFields[i].id ] = form.parameterFields[i].data
+        dataset.add_query_instance( tabdata_query_id, json.dumps( instance_parameters ))
+        return redirect( url_for('tutorial_bp.edit_tabdata_dataset', **{ 'tabdata_dataset_id' : dataset.id } ) )
+    else :
+        flash("Error: " + repr( form.errors ) )
+    return render_template( 'add_tabdata_dataset_query.html', tabdata_dataset= dataset, tabdata_query = query, form = form )
+    
+
 @tutorial_bp.route('/delete_tabfile/<tabfile_id>')
 @login_required
 def delete_tabfile( tabfile_id ) :
@@ -106,6 +188,15 @@ def delete_tabfile( tabfile_id ) :
     db.session.delete( tabfile )
     db.session.commit()
     return redirect( url_for('tutorial_bp.edit_dataset', **{ 'dataset_id' : dataset_id } ) )
+
+@tutorial_bp.route('/delete_tabdata_query_instance/<tabdata_query_instance_id>')
+@login_required
+def delete_tabdata_query_instance( tabdata_query_instance_id ) :
+    query_instance = Tabdata_query_instance.query.get( int( query_instance_id ) )
+    dataset_id = query_instance.dataset.id
+    db.session.delete( query_instance )
+    db.session.commit()
+    return redirect( url_for('tutorial_bp.edit_tabdata_dataset', **{ 'tabdata_dataset_id' : dataset_id } ) )
 
 @tutorial_bp.route('/delete_query_instance/<query_instance_id>' )
 @login_required
@@ -145,6 +236,24 @@ def regenerate_h5( dataset_id ) :
 def view_query_instance( query_instance_id ) :
     query_instance = Query_instance.query.get( int( query_instance_id ) )
     return render_template( query_instance.query_def.template, query_data = query_instance.retrieve_data() )
+
+@tutorial_bp.route("/view_tabdata_query_instance/<tabdata_query_instance_id>", methods=('GET', 'POST') )
+@login_required
+def view_tabdata_query_instance(tabdata_query_instance_id):
+    """
+    
+    Arguments:
+    - `tabdata_query_instance_id`:
+    """
+    query_instance = Tabdata_query_instance.query.get( int(tabdata_query_instance_id) )
+    return render_template( query_instance.query_def.template, query_data = query_instance.retrieve_data() )
+
+@tutorial_bp.route('/vis_tabdata_query_instance/<tabdata_query_instance_id>', methods=('GET','POST') )
+@login_required
+def vis_tabdata_query_instance( tabdata_query_instance_id ) :
+    query_instance = Tabdata_query_instance.query.get( int( tabdata_query_instance_id ) )
+    data = query_instance.retrieve_data()
+    return render_template( "vis_" + query_instance.query_def.template, tabdata_query_instance_id = tabdata_query_instance_id, tabdata_query_instance = query_instance, query_data = data )
 
 @tutorial_bp.route('/vis_query_instance/<query_instance_id>', methods=('GET','POST') )
 @login_required
