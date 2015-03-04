@@ -1,8 +1,9 @@
-from biblio.wos_reader import open_wos_h5, Wos_h5_reader
+from biblio.wos_reader import open_wos_h5, Wos_h5_reader, country_from_address
 from collections import Counter
 import json
 import unittest
 from itertools import chain, islice, combinations
+import numpy
 
 """
 Given a "query" in the form of a JSON datastructure, output another JSON
@@ -33,11 +34,40 @@ def resultFromQuery( w5, q, context ):
             thisResult = paperLocationQuery( w5 )
         elif v['queryType'] == 'paperHexbinQuery' :
             thisResult = paperHexbinQuery( w5, context['paperLocationFunc'] )
+        elif v['queryType'] == 'countryCollaborationQuery' :
+            thisResult = countryCollaborationQuery( w5 )
         result[k] = thisResult
         
     return result
 
 # queries return objects, not JSON (the "result" is a JSON string)
+def countryIndex( w5 ) :
+    # returns a sorted list of countries from the w5 file
+    result = list([x.decode('UTF-8') for x in w5.countries_counter().keys()])
+    result.sort()
+    return result
+
+def countryCollaborationQuery( w5 ) :
+    # this is a collaboration query; in other words we are returning two things: a symmetric matrix, where
+    # rows and columns correspond to countries and values represent number of papers countries have
+    # collaborated on, and a dictionary mapping "cleaned" country names to row/column indices
+
+    # the result is a matrix in the form of a list (to be JSONable), and a key which is a list of the countries
+    # as a legend
+    
+    # first, get a list of all countries in the corpus
+    key = countryIndex( w5 )
+    num_countries = len(key)
+    m = numpy.zeros( [ num_countries, num_countries ] )
+    # now, case by case, get a list of the countries
+    for row in w5.h5.root.countries :
+        countries = [ x.decode('utf-8') for x in row ]
+        for pair in combinations( countries, 2 ) :
+            i1 = key.index( pair[0] )
+            i2 = key.index( pair[1] )
+            m[i1, i2] = m[i1,i2]+1
+            m[i2, i1] = m[i2,i1]+1
+    return { "matrix" : m.tolist(), "key" : key }
      
 def categoricalSummaryQuery( w5, queryString ) :
     """

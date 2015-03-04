@@ -6,7 +6,7 @@ from tutorial import db, app
 import os.path
 from flask.ext.security import SQLAlchemyUserDatastore
 
-from tutorial.models import User, Query, Role, Gps_remap, Gps_cache
+from tutorial.models import User, Query, Role, Gps_remap, Gps_cache, Tabdata_query
 
 def create_gps_cache() :
     db.create_all( bind = 'gps_cache' )

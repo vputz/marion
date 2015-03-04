@@ -82,7 +82,7 @@ def upload_file() :
     filename = None
     if form.validate_on_submit() :
         current_user.add_file( form.file_1.data )
-        return redirect(url_for('index'))
+        return redirect(url_for('tutorial_bp.index'))
     else :
         filename = None
     #print( "Errors: " + str( form.errors ))

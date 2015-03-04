@@ -79,9 +79,9 @@ var makeExpandableBarChart = function( selector, series_name, data, width, heigh
 	.append("p");
 
     buttonbar.append( "input" )
-	.attr("id","MOAR")
+	.attr("id","More")
 	.attr("type","button")
-	.attr("value","MOAR")
+	.attr("value","More")
 	.on("click",function() { 
 	    limit = Math.min( limit+1, series[0].values.length );
 	    chartArea.datum( limitedData( series, limit ) )
@@ -89,9 +89,9 @@ var makeExpandableBarChart = function( selector, series_name, data, width, heigh
 	});
 
     buttonbar.append( "input" )
-	.attr("id","LESS")
+	.attr("id","Fewer")
 	.attr("type","button")
-	.attr("value","LESS")
+	.attr("value","Fewer")
 	.on("click",function() { 
 	    limit = Math.max( limit-1, 0 );
 	    chartArea.datum( limitedData( series, limit ) )

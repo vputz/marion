@@ -103,7 +103,6 @@ var scheme = colorbrewer["YlOrRd"][classes];
 var color;
 
 function hex_style( hexagons ) {
-    console.flush();
     // maintain a density scale relative to initial zoom level
     if (!(max && scale)) { 
 	max = d3.max( hexagons.data(), function(d) { return d.length; });

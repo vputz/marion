@@ -40,15 +40,19 @@ def get_location( loc, cache_result = False ) :
         db.session.commit()
     return result
 
-def get_locations_and_unknowns( locs ) :
+def get_locations_and_unknowns( locs, cache_result = True ) :
     # like get_location, but a list; returns a dictionary mapping locs to lat/lon
     # pairs AND a list of unknowns (locs)
     locations = {}
     unknowns = []
     for loc in locs :
-        this_result = get_location(loc, True)
+        this_result = get_location(loc, cache_result)
         if this_result == None :
             unknowns.append( loc )
         else :
             locations[loc] = this_result
     return locations, unknowns
+
+def get_locations_and_unknowns_nocache( locs ) :
+    """ included for testing """
+    return get_locations_and_unknowns( locs, False )
