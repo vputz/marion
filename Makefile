@@ -13,6 +13,7 @@ publish :
 #rsync -a -e ssh csv_to_citation_timestamp.py thingotr@thingotron.com:dev/citation_query
 #	rsync -a -e ssh feed_graphite.py thingotr@thingotron.com:dev/citation_query
 #	rsync -a -e ssh test_citation_query.csv thingotr@thingotron.com:dev/citation_query
+	ssh -t thingotr@thingotron.com "cd /home3/thingotr/marion && sed -i s/debug=True/debug=False/g local_conf.py"
 
 publish_db :
 	rsync -a -e ssh app.db thingotr@thingotron.com:marion

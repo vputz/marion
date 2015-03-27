@@ -192,7 +192,7 @@ def delete_tabfile( tabfile_id ) :
 @tutorial_bp.route('/delete_tabdata_query_instance/<tabdata_query_instance_id>')
 @login_required
 def delete_tabdata_query_instance( tabdata_query_instance_id ) :
-    query_instance = Tabdata_query_instance.query.get( int( query_instance_id ) )
+    query_instance = Tabdata_query_instance.query.get( int( tabdata_query_instance_id ) )
     dataset_id = query_instance.dataset.id
     db.session.delete( query_instance )
     db.session.commit()
