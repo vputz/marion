@@ -9,6 +9,7 @@ This may change in the future
 
 import csv
 import json
+import fileinput
 
 
 def location_and_value( filename, parameters, locationFunc ):
@@ -31,22 +32,25 @@ def location_and_value( filename, parameters, locationFunc ):
     """
     result = { 'nodes' : {}, 'not_located' : [] }
     node_index = 0
-    with open( filename) as csvfile:
-        reader = csv.reader( csvfile )
+    with open( filename, encoding="ISO-8859-1") as csvfile:
+        reader = csv.reader( csvfile ) #fileinput.FileInput( [filename], openhook=fileinput.hook_encoded("utf-8")) )
         for row in reader :
-            node_index = node_index + 1
-            location = row[ int(parameters['locationColumn']) ]
-            loc = locationFunc( row[ int(parameters['locationColumn']) ], True )
-            if loc == None :
-                result['not_located'].append( location )
-            else :
-                node = loc
-                if 'textColumn' in parameters :
-                    node['text'] = row[ int(parameters['textColumn']) ]
+            try :
+                node_index = node_index + 1
+                location = row[ int(parameters['locationColumn']) ]
+                loc = locationFunc( row[ int(parameters['locationColumn']) ], True )
+                if loc == None :
+                    result['not_located'].append( location )
                 else :
-                    node['text'] = ''
-                if 'valueColumn' in parameters :
-                    node['value'] = row[ int(parameters['valueColumn']) ]
-                result['nodes'][node_index] = node
+                    node = loc
+                    if 'textColumn' in parameters :
+                        node['text'] = row[ int(parameters['textColumn']) ]
+                    else :
+                        node['text'] = ''
+                    if 'valueColumn' in parameters :
+                        node['value'] = row[ int(parameters['valueColumn']) ]
+                    result['nodes'][node_index] = node
+            except :
+                continue
 
     return result

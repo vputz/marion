@@ -91,7 +91,11 @@ function totalval( json ) {
 function maxval( d ) {
     result = 0;
     d.forEach( function(d) {
-	result = Math.max( result, d['value']);
+	var thisArg = d['value'];
+	if ( isNaN( thisArg ) ) {
+	    thisArg = 0;
+	}
+	result = Math.max( result, thisArg );
     });
     return result;
 }
