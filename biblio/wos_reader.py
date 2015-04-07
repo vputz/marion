@@ -68,8 +68,6 @@ from collections import Counter
 import itertools
 import re
 import string
-from nltk.tokenize import word_tokenize
-from nltk import PorterStemmer
 
 def authorlist_from_authorfield( string ) :
     return [x.strip() for x in string.split(";")]
@@ -393,43 +391,6 @@ def make_pytable( w, filename, title="test" ) :
     authortable.cols.paper_index.create_index()
     authortable.flush()
     h5file.close()
-
-
-def stripword( s ) :
-    """
-    strips punctuation from word
-    """
-    return re.sub( '[\W\d]', '', s )
-
-def wordbag( text, ignore_words = [] ) :
-    """
-    A dictionary where the keys are words and the values are counts of words in the text.
-    Taking the keys() should get a list of unique words
-    """
-    iter = (stripword(s) for s in text.lower().split() if stripword(s) not in ignore_words)
-    result = {}
-    for x in iter :
-        if x in result :
-            result[x] += 1
-        else :
-            result[x] = 1
-    return result
-
-my_ignore_words = set(('a','von','','the','and','from','with','to','some','for','of','by','on','in','all','do','we','is','it','if','has','was','no','can','so','not','one','any','or','an','as','at','are','us','our','elsevier','institute' ,'edition','little', 'we'))
-
-Ignore_words = wordbag( open('english_stop.txt').read()+" ".join(my_ignore_words), () ).keys()
-
-def words( item, ignore_words = Ignore_words ) :
-    result = list(wordbag(item, ignore_words).keys())
-    result.sort()
-    return result
-
-def stems( item, ignore_words = Ignore_words ): 
-    # remove numbers and punctuation
-    p = PorterStemmer()
-    s = item.translate(None, string.punctuation).translate(None, string.digits)
-    result = list(set([p.stem(x).lower() for x in word_tokenize(s) if stripword(x) not in ignore_words]))
-    return result
 
 class Wos_h5_reader() :
 

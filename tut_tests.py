@@ -215,7 +215,8 @@ class CountryCollaborationQueryTest(MarionTest):
         self.assertEqual( k, ['Denmark', 'Egypt', 'England', 'Finland', 'Germany', 'Japan', 'Ukraine'] )
 
     def testCountryCollaborationQuery( self ) :
-        m, key = wos_reader_query.countryCollaborationQuery( self.w5 )
+        queryResult = wos_reader_query.countryCollaborationQuery( self.w5 )
+        m = queryResult['matrix']
         self.assertEqual( (m == numpy.array( [[ 0,0.,1,1,1,0,1],
                                            [ 0,0,0,0,0,0,0 ],
                                            [ 1,0,0,1,1,2,1 ],
