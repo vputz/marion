@@ -39,12 +39,12 @@
     {% endfor %}
   </table>
 
-<script src="http://cdn.leafletjs.com/leaflet-0.6.4/leaflet.js"></script>
-<script src="http://d3js.org/d3.v3.min.js"></script>
+<script src="{{ url_for('bower.static', filename='d3/d3.js') }}"></script>
 <script src="http://d3js.org/d3.hexbin.v0.js"></script>
-<script src="{{ url_for('static', filename='javascript/colorbrewer.js') }}"></script>
+<script src="{{ url_for('bower.static', filename='leaflet/dist/leaflet.js' ) }}"></script>
+<script src="{{ url_for('bower.static', filename='colorbrewer/colorbrewer.js') }}"></script>
 <script src="{{ url_for('static', filename='javascript/leaflet.hexbin-layer.js') }}"></script>
-<script src="{{ url_for('static', filename='javascript/leaflet-providers.js') }}"></script>
+<script src="{{ url_for('bower.static', filename='leaflet-providers/leaflet-providers.js') }}"></script>
 <script src="{{ url_for('static', filename='javascript/arc.js') }}"></script>
 <!--one source of info:jeromegagnonvoyer.wordpress.com/2013/04/17/creating-a-data-visualization-tool-using-d3-js-crossfilter-and-leaflet-js/ -->
 <script>
@@ -139,7 +139,7 @@ d3.json("{{ url_for('retrieve_query_result', **{'id' : query_instance.id} ) }}",
     color = d3.scale.sqrt()
 	.domain([1, maxval( nodes )])
 	.range(["palegreen","red"]);
-
+    
     L.hexLayer( nodes, {
 	applyStyle: hex_style
     }).addTo(map);

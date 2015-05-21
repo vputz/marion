@@ -1,0 +1,170 @@
+{% extends "base.html" %}
+{% block content %}
+<head>
+<link rel="stylesheet" href="{{ url_for('bower.static', filename='leaflet/dist/leaflet.css' ) }}"/>
+ <!--[if lte IE 8]>
+     <link rel="stylesheet" href="http://cdn.leafletjs.com/leaflet-0.6.4/leaflet.ie.css" />
+ <![endif]-->
+<link rel="stylesheet" href="{{ url_for('bower.static', filename='leaflet.markercluster/dist/MarkerCluster.css') }}" />
+<link rel="stylesheet" href="{{ url_for('bower.static', filename='leaflet.markercluster/dist/MarkerCluster.Default.css') }}" />
+<style>
+.marker-cluster div {
+	width: 100px;
+	height: 45px;
+    text-align: center;
+    vertical-align : middle;
+    position: absolute;
+    top: 0px;
+	border-radius: 10px;
+	font: 18px "Helvetica Neue", Arial, Helvetica, sans-serif;
+	box-shadow: 5px 5px 2px #888888;
+	}
+
+    .marker-cluster span {
+	line-height : 0px
+    }
+
+.marker-item {
+    background-clip: padding-box;
+    border-radius: 60px;
+}
+
+.marker-item div {
+    width: 50px;
+    height: 50px;
+    text-align: center;
+    border-radius: 50px;
+    border: 2px solid;
+    border-color: "000000";
+    font: 12px "Helvetica Neue", Arial, Helvetica, sans-serif;
+    line-height: 50px;
+    background-color: greenyellow;
+    box-shadow: 5px 5px 2px #888888;
+}
+
+
+</style>
+</head>
+<body>
+<h1> {{ tabdata_query_instance.dataset.description }} </h1>
+<h2> Map </h2>
+  <div id="map" style="height: 800px"></div>
+  <h2> Unlocatable Locations </h2>
+  <table>
+    {% for loc in query_data['not_located'] %}
+    <tr><td> <a href="{{ url_for( 'tutorial_bp.make_gps_remap', **{ 'remap_loc' : loc} ) }}"> {{ loc }} </a> </td></tr>
+    {% endfor %}
+  </table>
+
+<script src="{{ url_for('bower.static', filename='leaflet/dist/leaflet.js' ) }}"></script>
+<script src="{{ url_for('bower.static', filename='leaflet.markercluster/dist/leaflet.markercluster.js' ) }}"></script>
+<script src="{{ url_for('bower.static', filename='d3/d3.js') }}"></script>
+
+<!--one source of info:jeromegagnonvoyer.wordpress.com/2013/04/17/creating-a-data-visualization-tool-using-d3-js-crossfilter-and-leaflet-js/ -->
+<script>
+var map = L.map("map").setView([51.505, -0], 5);
+<!--so that adds a map; now we must add a tile layer, hitns from sajjad.in/2012/01/mapquest-tiles-through-leaflet-js -->
+
+var mapquestUrl = 'http://{s}.mqcdn.com/tiles/1.0.0/osm/{z}/{x}/{y}.png',
+subDomains = ['otile1','otile2','otile3','otile4'],
+mapquestAttrib = 'Data, imagery and map information provided by <a href="http://open.mapquest.co.uk" target="_blank">MapQuest</a>, <a href="http://www.openstreetmap.org/" target="_blank">OpenStreetMap</a> and contributors.'
+var mapquest = new L.TileLayer(mapquestUrl, {maxZoom: 18, attribution: mapquestAttrib, subdomains: subDomains})
+    .addTo(map);
+
+function readable_val( value ) {
+    if ( typeof(value.toFixed) == "undefined" ) {
+	result = 0;
+    }
+    else if ( value > 1000000 ) {
+	result = (value / 1000000).toFixed(1) + "m";
+    }
+    else if ( value > 1000 ) {
+	result = ( value/1000 ).toFixed(1) + "k";
+    }
+    else {
+	result = value.toFixed(1);
+    }
+    return result;
+};
+
+function clusterValue( cluster ) {
+    var total = 0;
+    cluster.getAllChildMarkers().forEach( function(d) {
+	total += parseInt(d.options['value']);
+    });
+    return total;
+}
+
+
+
+
+var data = {{query_data | tojson}};
+var nodes = Object.keys( data.nodes ).map( function (key) {
+    return data.nodes[key];
+});
+console.log(nodes);
+function totalval( json ) {
+    result = 0;
+    json.forEach( function(d) {
+	var v = parseInt(d['value']);
+	if ( !isNaN(v) ) {
+	    result += v;
+	}
+    });
+    return result;
+}
+
+function setData( json ) {
+    color = d3.scale.sqrt()
+	.domain( [0, totalval( json )] )
+	.range( ["palegreen", "red"] );
+
+    // the map is initialized.  Now learn to use the multiple marker feature
+    var markers = new L.MarkerClusterGroup( {
+	iconCreateFunction: function( cluster ) {
+	    var cluster_value = clusterValue(cluster);
+	    
+	    var subclass = ' marker-cluster-';
+	    if ( cluster_value < 100000 ) {
+		subclass += 'small';
+	    } else if ( cluster_value < 1000000 ) {
+		subclass += 'medium';
+	    } else {
+		subclass += 'large';
+	    }
+	    
+	    return L.divIcon( { 
+		html: "<div style='background-color:" + color( cluster_value ) + "'><span><p>" + cluster.getChildCount() 
+		    + "<p>$" 
+		    + readable_val( clusterValue(cluster)) + "</span></div>",
+		className: 'marker-cluster', // + subclass, 
+		iconSize: L.point(100,40)
+	    } );
+	}
+    });
+
+
+    json.forEach( function(d) {
+	markers.addLayer( 
+	    new L.marker( new L.LatLng( d['lat'], d['lon'] ), 
+			  { 
+			      title: d['text'], 
+			      value: parseInt(d['value']),
+			      icon: L.divIcon( { 
+				  html: "<div style='background-color:" + color( d['value'] ) + "'><span>" + "$"+readable_val( parseInt(d['value']) ) + "</span></div>",
+				  className: 'marker-item',
+				  iconSize: L.point( 40,40 ) 
+				  })
+			  } ) );
+    } );
+    map.addLayer(markers);
+};
+
+// hack hack hack TODO change this and fix in setting up query
+setData( nodes.slice(1) );
+
+</script>
+</body>
+</html>
+
+{% endblock %}

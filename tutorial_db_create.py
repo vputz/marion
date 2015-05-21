@@ -28,6 +28,7 @@ with app.app_context() :
 
     # create tabdata queries
     q = Tabdata_query( name="Tabdata_hexbin", description="Hexbin of geographical data", parameters='{ "locationColumn" : 0, "valueColumn" : 0, "textColumn" : 0 }', template="tabdata_hexbin_query.html" )
+    q = Tabdata_query( name="Tabdata_markercluster", description="Markercluster map of geographical data", parameters='{ "locationColumn" : 0, "valueColumn" : 0, "textColumn" : 0 }', template="tabdata_markercluster_query.html" )
     db.session.add(q)
     db.session.commit()
 

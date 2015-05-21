@@ -5,17 +5,28 @@
     {% else %}
     <title>microblog</title>
     {% endif %}
+    <link rel="stylesheet" type="text/css" href="{{ url_for('bower.static', filename='bootstrap/dist/css/bootstrap.min.css') }}" />
+    <script type="text/javascript" src="{{ url_for('bower.static', filename='d3/d3.js' ) }}" charset="utf-8"></script>
+    <script type="text/javascript" src="{{ url_for('bower.static', filename='colorbrewer/colorbrewer.js' ) }}" charset="utf-8"></script>
+    <script src="{{ url_for('bower.static', filename='nvd3/build/nv.d3.js') }}" charset="utf-8"></script>
   </head>
   <body>
-    <div>
-      {{ current_user.is_authenticated() }}
-      {{ current_user }}
-      {{ g.user }}
-      <a href="{{ url_for('tutorial_bp.index') }}">Home</a>
-{% if g.user.is_authenticated() %}
-      | <a href="{{ url_for('tutorial_bp.logout') }}"> Logout</a>
-{% endif %}
-
+    <!-- http://www.w3resource.com/twitter-bootstrap/navbar-tutorial.php -->
+      <div>
+	  <a class="brand"  href="#"><h1>Marion</h1></a>
+      {{ g.user.nickname }}
+	<nav class="navbar navbar-default">
+	    <div class="nav navbar-nav" >
+		<div class="container">
+		    <ul class="nav nav-tabs" >
+			<li><a href="{{ url_for('tutorial_bp.index') }}">Home</a></li>
+			{% if g.user.is_authenticated() %}
+			<li><a href="{{ url_for('tutorial_bp.logout') }}"> Logout</a></li>
+			{% endif %}
+		    </ul>
+		</div>
+	    </div>
+	</nav>
     </div>
     <hr>
     {% with messages = get_flashed_messages() %}

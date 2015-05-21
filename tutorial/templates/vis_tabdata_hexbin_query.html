@@ -1,22 +1,22 @@
 {% extends "base.html" %}
-{% block content %}
+{% block content %} 
 
 <html>
-<head>
-<link rel="stylesheet" href="http://cdn.leafletjs.com/leaflet-0.6.4/leaflet.css" />
- <!--[if lte IE 8]>
-     <link rel="stylesheet" href="http://cdn.leafletjs.com/leaflet-0.6.4/leaflet.ie.css" />
- <![endif]-->
-<link rel="stylesheet" href="{{ url_for('static', filename='css/MarkerCluster.css') }}" />
-<link rel="stylesheet" href="{{ url_for('static', filename='css/MarkerCluster.Default.css') }}" />
-<style>
-    .myCluster {
-	width: 100px;
-	height: 40px;
-	background-color: greenyellow;
-	text-align: center;
-	font-size: 12px;
-	background-clip: padding-box;
+	<head>
+		<link rel="stylesheet" href="http://cdn.leafletjs.com/leaflet-0.6.4/leaflet.css" />
+		<!--[if lte IE 8]>
+		<link rel="stylesheet" href="http://cdn.leafletjs.com/leaflet-0.6.4/leaflet.ie.css" />
+		<![endif]-->
+		<link rel="stylesheet" href="{{ url_for('bower.static', filename='leaflet.markercluster/dist/MarkerCluster.css') }}" />
+		<link rel="stylesheet" href="{{ url_for('bower.static', filename='leaflet.markercluster/dist/MarkerCluster.Default.css') }}" />
+		<style>
+		.myCluster {
+			width: 100px;
+			height: 40px;
+			background-color: greenyellow;
+			text-align: center;
+			font-size: 12px;
+			background-clip: padding-box;
 	border-radius: 10px;
     }
 </style>
@@ -33,15 +33,18 @@
     {% endfor %}
   </table>
 
-<script src="http://cdn.leafletjs.com/leaflet-0.6.4/leaflet.js"></script>
-<script src="http://d3js.org/d3.v3.min.js"></script>
+<script src="{{ url_for('bower.static', filename='leaflet/dist/leaflet.js' ) }}"></script>
+<script src="{{ url_for('bower.static', filename='d3/d3.js') }}"></script>
 <script src="http://d3js.org/d3.hexbin.v0.js"></script>
-<script src="{{ url_for('static', filename='javascript/colorbrewer.js') }}"></script>
+<script src="{{ url_for('bower.static', filename='colorbrewer/colorbrewer.js') }}"></script>
 <script src="{{ url_for('static', filename='javascript/leaflet.hexbin-layer.js') }}"></script>
-<script src="{{ url_for('static', filename='javascript/leaflet-providers.js') }}"></script>
+<script src="{{ url_for('bower.static', filename='leaflet-providers/leaflet-providers.js') }}"></script>
 <script src="{{ url_for('static', filename='javascript/arc.js') }}"></script>
 <!--one source of info:jeromegagnonvoyer.wordpress.com/2013/04/17/creating-a-data-visualization-tool-using-d3-js-crossfilter-and-leaflet-js/ -->
 <script>
+"use strict";
+/* global L, console, colorbrewer, d3 */
+
 var map = L.map("map").setView([51.505, -0], 5);
 <!--so that adds a map; now we must add a tile layer, hitns from sajjad.in/2012/01/mapquest-tiles-through-leaflet-js -->
 <!--var mapquestUrl = 'http://{s}.mqcdn.com/tiles/1.0.0/osm/{z}/{x}/{y}.png',-->
@@ -53,45 +56,41 @@ var map = L.map("map").setView([51.505, -0], 5);
 
 //L.tileLayer.provider("Esri.NatGeoWorldMap").addTo(map);
 L.tileLayer.provider("MapQuestOpen.Aerial").addTo(map);
-function readable_val( value ) {
+function readableVal( value ) {
+    var result = null;
     if ( value > 1000000 ) {
 	result = (value / 1000000).toFixed(1) + "m";
     }
     else if ( value > 1000 ) {
-	result = ( value/1000 ).toFixed(1) + "k";
+	result = ( value / 1000 ).toFixed(1) + "k";
     }
     else {
 	result = value.toFixed(1);
     }
     return result;
-};
+}
 
 function clusterValue( cluster ) {
     var total = 0;
     cluster.getAllChildMarkers().forEach( function(d) {
-	total += d.options['value'];
+	total += d.options.value;
     });
     return total;
 }
 
 
-
-
-var datafile = "pnodes.json"
-var edgefile = "pedges.json"
-
 function totalval( json ) {
-    result = 0;
+    var result = 0;
     json.forEach( function(d) {
-	result += d['value'];
+	result += d.value;
     });
     return result;
 }
 
 function maxval( d ) {
-    result = 0;
-    d.forEach( function(d) {
-	var thisArg = d['value'];
+    var result = 0;
+    d.forEach( function(d2) {
+	var thisArg = d2.value;
 	if ( isNaN( thisArg ) ) {
 	    thisArg = 0;
 	}
@@ -103,12 +102,12 @@ function maxval( d ) {
 //this hexbin from http://bl.ocks.org/tnightingale/4668062
 var max, scale;
 var classes = 9;
-var scheme = colorbrewer["YlOrRd"][classes];
+var scheme = colorbrewer.YlOrRd[classes];
 var color;
 
-function hex_style( hexagons ) {
+function hexStyle( hexagons ) {
     // maintain a density scale relative to initial zoom level
-    if (!(max && scale)) { 
+    if (!(max && scale)) {
 	max = d3.max( hexagons.data(), function(d) { return d.length; });
 	scale = d3.scale.quantize()
 	    .domain([0, max])
@@ -116,7 +115,7 @@ function hex_style( hexagons ) {
     }
 
     hexagons
-    .attr("stroke", scheme[classes-1])
+    .attr("stroke", scheme[classes - 1])
     .attr("fill-opacity", 0.7)
 
     .attr("fill", function(d) {
@@ -124,32 +123,40 @@ function hex_style( hexagons ) {
 	//console.flush();
 	return color(totalval(d));//return scheme[scale(d.length)];
     })
-    .append("svg:title").text( function(d) { result = ""; d.forEach( function(d2) { result += d2["text"]+ "\n"; }); return result; } );
+	.append("svg:title").text( function(d) {
+	    var result = "";
+	    d.forEach( function(d2) {
+		result += d2.text + "\n";
+	    });
+	    return result; } );
 }
 
 function itemlist( dictionary ) {
     var result = [];
     for (var key in dictionary) {
 	if ( dictionary.hasOwnProperty(key) ) {
-	    entry = dictionary[key];
-	    entry['lng'] = entry['lon'];  // hack because hexbin expects lng instead of lon
-	    result.push(dictionary[key]);
+	    var entry = dictionary[key];
+	    entry["lng"] = entry["lon"];  // hack because hexbin expects lng instead of lon
+	    result.push(entry);
 	}
     }
     return result;
 }
 
-data = {{query_data| tojson}};
-nodes = itemlist(data['nodes'])
-console.log("Maxval: " + maxval(nodes));
-console.log(nodes)
-color = d3.scale.sqrt()
-    .domain([1, maxval( nodes )])
-    .range(["palegreen","red"]);
-
-L.hexLayer( nodes, {
-    applyStyle: hex_style
-}).addTo(map);
+//data = {{query_data| tojson}};
+var data = {};
+d3.json("{{ url_for('retrieve_tabdata_query_result', **{'id' : tabdata_query_instance.id} ) }}",
+    function(d) {
+	data = d;
+	var nodes = itemlist(data.nodes);
+	color = d3.scale.sqrt()
+	    .domain([1, maxval( nodes )])
+	    .range(["palegreen", "red"]);
+	
+	L.hexLayer( nodes, {
+	    applyStyle: hexStyle
+	}).addTo(map);
+    });
 
 //    edges = d['hexbin']['hexbin']['edges'];
 //    edges.forEach( function(d) {

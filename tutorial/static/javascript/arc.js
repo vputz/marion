@@ -1,7 +1,9 @@
+"use strict";
+
 var D2R = Math.PI / 180;
 var R2D = 180 / Math.PI;
 
-var Coord = function(lon,lat) {
+var Coord = function(lon, lat) {
     this.lon = lon;
     this.lat = lat;
     this.x = D2R * lon;
@@ -9,18 +11,19 @@ var Coord = function(lon,lat) {
 };
 
 Coord.prototype.view = function() {
-    return String(this.lon).slice(0, 4) + ',' + String(this.lat).slice(0, 4);
+    return String(this.lon).slice(0, 4) + "," + String(this.lat).slice(0, 4);
 };
 
 Coord.prototype.antipode = function() {
 
-    var anti_lat = -1 * this.lat;
+    var antiLat = -1 * this.lat;
+    var antiLon = -1;
     if (this.lon < 0) {
-        var anti_lon = 180 + this.lon;
+        antiLon = 180 + this.lon;
     } else {
-        var anti_lon = (180 - this.lon) * -1;
+        antiLon = (180 - this.lon) * -1;
     }
-    return new Coord(anti_lon, anti_lat);
+    return new Coord(antiLon, antiLat);
 };
 
 var LineString = function() {
@@ -28,58 +31,61 @@ var LineString = function() {
     this.length = 0;
 };
 
-LineString.prototype.move_to = function(coord) {
+LineString.prototype.moveTo = function(coord) {
     this.length++;
     this.coords.push(coord);
 };
 
 var Arc = function(properties) {
     this.properties = properties || {};
-    this.geometries = []
+    this.geometries = [];
 };
 
 Arc.prototype.json = function() {
     if (this.geometries.length <= 0) {
-        return {'geometry': { 'type': 'LineString', 'coordinates': null },
-                'type': 'Feature', 'properties': this.properties
+        return {"geometry": { "type": "LineString", "coordinates": null },
+                "type": "Feature", "properties": this.properties
                };
-    } else if (this.geometries.length == 1) {
-        return {'geometry': { 'type': 'LineString', 'coordinates': this.geometries[0].coords },
-                'type': 'Feature', 'properties': this.properties
+    } else if (this.geometries.length === 1) {
+        return {"geometry": { "type": "LineString", "coordinates": this.geometries[0].coords },
+                "type": "Feature", "properties": this.properties
                };
     } else {
-        var multiline = []
-        for (i = 0; i < this.geometries.length; i++) {
+        var multiline = [];
+        for (var i = 0; i < this.geometries.length; i++) {
             multiline.push(this.geometries[i].coords);
         }
-        return {'geometry': { 'type': 'MultiLineString', 'coordinates': multiline },
-                'type': 'Feature', 'properties': this.properties
+        return {"geometry": { "type": "MultiLineString", "coordinates": multiline },
+                "type": "Feature", "properties": this.properties
                };
     }
 };
 
 // TODO - output proper multilinestring
 Arc.prototype.wkt = function() {
-    var wkt_string = '';
-    for (i = 0; i < this.geometries.length; i++) {
+    var wktString = "";
+    var coordText = function( c ) {
+	return c[0] + " " + c[1] + ",";
+    };
+    for (var i = 0; i < this.geometries.length; i++) {
         if (this.geometries[i].coords.length === 0) {
-            return 'LINESTRING(empty)';
+            return "LINESTRING(empty)";
         } else {
-            var wkt = 'LINESTRING(';
-            this.geometries[i].coords.forEach(function(c,idx) {
-                wkt += c[0] + ' ' + c[1] + ',';
-            });
-            wkt_string += wkt.substring(0, wkt.length - 1) + ')';
+            var wkt = "LINESTRING(" + this.geometries[i].coords.map(coordText).join("");
+            //this.geometries[i].coords.map(coordText)(function(c,idx) {
+            //    wkt += c[0] + " " + c[1] + ",";
+            //});
+            wktString += wkt.substring(0, wkt.length - 1) + ")";
         }
     }
-    return wkt_string;
+    return wktString;
 };
 
 /*
  * http://en.wikipedia.org/wiki/Great-circle_distance
  *
  */
-var GreatCircle = function(start,end,properties) {
+var GreatCircle = function(start, end, properties) {
 
     this.start = start;
     this.end = end;
@@ -93,10 +99,10 @@ var GreatCircle = function(start,end,properties) {
                      Math.pow(Math.sin(w / 2.0), 2);
     this.g = 2.0 * Math.asin(Math.sqrt(z));
 
-    if (this.g == Math.PI) {
-        throw new Error('it appears ' + start.view() + ' and ' + end.view() + " are 'antipodal', e.g diametrically opposite, thus there is no single route but rather infinite");
+    if (this.g === Math.PI) {
+        throw new Error("it appears " + start.view() + " and " + end.view() + " are antipodal, e.g diametrically opposite, thus there is no single route but rather infinite");
     } else if (isNaN(this.g)) {
-        throw new Error('could not calculate great circle between ' + start + ' and ' + end);
+        throw new Error("could not calculate great circle between " + start + " and " + end);
     }
 };
 
@@ -119,13 +125,13 @@ GreatCircle.prototype.interpolate = function(f) {
 /*
  * Generate points along the great circle
  */
-GreatCircle.prototype.Arc = function(npoints,options) {
-    var first_pass = [];
+GreatCircle.prototype.Arc = function(npoints, options) {
+    var firstPass = [];
     //var minx = 0;
     //var maxx = 0;
     if (npoints <= 2) {
-        first_pass.push([this.start.lon, this.start.lat]);
-        first_pass.push([this.end.lon, this.end.lat]);
+        firstPass.push([this.start.lon, this.start.lat]);
+        firstPass.push([this.end.lon, this.end.lat]);
     } else {
         var delta = 1.0 / (npoints - 1);
         for (var i = 0; i < npoints; i++) {
@@ -133,7 +139,7 @@ GreatCircle.prototype.Arc = function(npoints,options) {
             var pair = this.interpolate(step);
             //minx = Math.min(minx,pair[0]);
             //maxx = Math.max(maxx,pair[0]);
-            first_pass.push(pair);
+            firstPass.push(pair);
         }
     }
     /* partial port of dateline handling from:
@@ -143,11 +149,11 @@ GreatCircle.prototype.Arc = function(npoints,options) {
     */
     var bHasBigDiff = false;
     var dfMaxSmallDiffLong = 0;
-    for (var i = 1; i < first_pass.length; i++) {
+    for (var i = 1; i < firstPass.length; i++) {
         //if (minx > 170 && maxx > 180) {
         // }
-        var dfPrevX = first_pass[i-1][0];
-        var dfX = first_pass[i][0];
+        var dfPrevX = firstPass[i-1][0];
+        var dfX = firstPass[i][0];
         var dfDiffLong = Math.abs(dfX - dfPrevX);
         if (dfDiffLong > 350 &&
             ((dfX > 170 && dfPrevX < -170) || (dfPrevX > 170 && dfX < -170))) {
@@ -157,33 +163,33 @@ GreatCircle.prototype.Arc = function(npoints,options) {
         }
     }
 
-    var poMulti = []
+    var poMulti = [];
 
     if (bHasBigDiff && dfMaxSmallDiffLong < 10) {
-        var poNewLS = []
+        var poNewLS = [];
         poMulti.push(poNewLS);
-        for (var i = 0; i < first_pass.length; i++) {
-            var dfX = parseFloat(first_pass[i][0]);
-            if (i > 0 &&  Math.abs(dfX - first_pass[i-1][0]) > 350) {
-                var dfX1 = parseFloat(first_pass[i-1][0]);
-                var dfY1 = parseFloat(first_pass[i-1][1]);
-                var dfX2 = parseFloat(first_pass[i][0]);
-                var dfY2 = parseFloat(first_pass[i][1]);
+        for (var i = 0; i < firstPass.length; i++) {
+            var dfX = parseFloat(firstPass[i][0]);
+            if (i > 0 &&  Math.abs(dfX - firstPass[i-1][0]) > 350) {
+                var dfX1 = parseFloat(firstPass[i-1][0]);
+                var dfY1 = parseFloat(firstPass[i-1][1]);
+                var dfX2 = parseFloat(firstPass[i][0]);
+                var dfY2 = parseFloat(firstPass[i][1]);
                 if (dfX1 > -180 && dfX1 < -170 && dfX2 == 180 &&
-                    i+1 < first_pass.length &&
-                   first_pass[i-1][0] > -180 && first_pass[i-1][0] < -170)
+                    i+1 < firstPass.length &&
+                   firstPass[i-1][0] > -180 && firstPass[i-1][0] < -170)
                 {
-                     poNewLS.push([-180, first_pass[i][1]]);
+                     poNewLS.push([-180, firstPass[i][1]]);
                      i++;
-                     poNewLS.push([first_pass[i][0], first_pass[i][1]]);
+                     poNewLS.push([firstPass[i][0], firstPass[i][1]]);
                      continue;
                 } else if (dfX1 > 170 && dfX1 < 180 && dfX2 == -180 &&
-                     i+1 < first_pass.length &&
-                     first_pass[i-1][0] > 170 && first_pass[i-1][0] < 180)
+                     i+1 < firstPass.length &&
+                     firstPass[i-1][0] > 170 && firstPass[i-1][0] < 180)
                 {
-                     poNewLS.push([180, first_pass[i][1]]);
+                     poNewLS.push([180, firstPass[i][1]]);
                      i++;
-                     poNewLS.push([first_pass[i][0], first_pass[i][1]]);
+                     poNewLS.push([firstPass[i][0], firstPass[i][1]]);
                      continue;
                 }
 
@@ -206,9 +212,9 @@ GreatCircle.prototype.Arc = function(npoints,options) {
                 {
                     var dfRatio = (180 - dfX1) / (dfX2 - dfX1);
                     var dfY = dfRatio * dfY2 + (1 - dfRatio) * dfY1;
-                    poNewLS.push([first_pass[i-1][0] > 170 ? 180 : -180, dfY]);
+                    poNewLS.push([firstPass[i - 1][0] > 170 ? 180 : -180, dfY]);
                     poNewLS = [];
-                    poNewLS.push([first_pass[i-1][0] > 170 ? -180 : 180, dfY]);
+                    poNewLS.push([firstPass[i - 1][0] > 170 ? -180 : 180, dfY]);
                     poMulti.push(poNewLS);
                 }
                 else
@@ -216,17 +222,17 @@ GreatCircle.prototype.Arc = function(npoints,options) {
                     poNewLS = [];
                     poMulti.push(poNewLS);
                 }
-                poNewLS.push([dfX, first_pass[i][1]]);
+                poNewLS.push([dfX, firstPass[i][1]]);
             } else {
-                poNewLS.push([first_pass[i][0], first_pass[i][1]]);
+                poNewLS.push([firstPass[i][0], firstPass[i][1]]);
             }
         }
     } else {
        // add normally
-        var poNewLS = []
+        var poNewLS = [];
         poMulti.push(poNewLS);
-        for (var i = 0; i < first_pass.length; i++) {
-            poNewLS.push([first_pass[i][0],first_pass[i][1]]);
+        for (var i = 0; i < firstPass.length; i++) {
+            poNewLS.push([firstPass[i][0],firstPass[i][1]]);
         }
     }
 
@@ -236,13 +242,13 @@ GreatCircle.prototype.Arc = function(npoints,options) {
         arc.geometries.push(line);
         var points = poMulti[i];
         for (var j = 0; j < points.length; j++) {
-            line.move_to(points[j]);
+            line.moveTo(points[j]);
         }
     }
     return arc;
 };
 
-if (typeof window === 'undefined') {
+if (typeof window === "undefined") {
   // nodejs
   module.exports.Coord = Coord;
   module.exports.Arc = Arc;
