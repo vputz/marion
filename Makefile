@@ -1,9 +1,9 @@
 test :
-	nosetests tut_tests.py --processes=-1
+	py.test tut_tests.py -n 1
 
 alltest :
-	nosetests tut_tests.py --processes=-1
-	nosetests tut_gps_tests.py
+	py.test tut_tests.py -n 1
+	py.test tut_gps_tests.py
 
 publish :
 	rsync -ar -e ssh tutorial thingotr@thingotron.com:marion

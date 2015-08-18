@@ -3,7 +3,7 @@
 {% block content %}
 {% from "_formhelpers.html" import render_field %}
 <h2>
-    Dataset {{ dataset.description }}
+    Dataset {{ dataset.description }}: {{ dataset.csv_rows() }} records
 </h2>
 <hr>
 Tab-separated files belonging to this dataset:
@@ -26,10 +26,14 @@ Tab-separated files belonging to this dataset:
 
     <hr>
     {% if dataset.h5_file_is_up_to_date() %}
-    This dataset's H5 file is up to date
+    This dataset's H5 file is up to date; click
+    <!-- if the following is changed to a "button" it does not work (dialog opens/closes instantly) -->
+    <a class="btn btn-default" onclick="return regenerateH5(event, {{ dataset.id }})">Regenerate</a>
+    to regenerate it.
     {% else %}
     <font color="red">This dataset's H5 file is nonexistent or not up to date; click 
-	<a href="{{ url_for('tutorial_bp.regenerate_h5', **{ 'dataset_id' : dataset.id }) }}">here</a> to regenerate it</font>
+    <a class="btn btn-default" href="{{ url_for('tutorial_bp.regenerate_h5', **{ 'dataset_id' : dataset.id }) }}">Regenerate</a>
+    fito regenerate it</font>
     {% endif %}
 </form>
 
@@ -58,6 +62,41 @@ Tab-separated files belonging to this dataset:
     <input type="submit" value="Add Query">
 </form>
 
+<!-- modal div from www.tutorialrepublic.com/codelab.php?topic=bootstrap&file=modal -->
+<div id="regenProgress" class="modal fade" >
+    <div class="modal-dialog" >
+	<div class="modal-content">
+	    <div class="modal-header">
+		<h4 class="modal-title" >Regenerating h5 file</h4>
+		<button type="button"  class="close"  data-dismiss="modal"  aria-hidden="true" >&times;</button>
+	    </div>
+	    <div class="modal-body" >
+		Regenerating the H5 file from tab data; please wait.<p/>
+	    </div>
+	    <div class="modal-footer">
+		<!-- <button type="button" class="btn btn-primary">Close</button> -->
+	    </div>
+	</div>
+    </div>
+</div>
+
+<script>
+
+"use strict";
+
+/* global $, console, EventSource */
+
+var regenerateH5 = function(event, id) {
+    event.stopPropagation();
+    $("#regenProgress").modal("show");
+
+    var source = new EventSource("{{ url_for('tutorial_bp.regenerate_h5_progress', **{'dataset_id' : dataset.id}) }}");
+    source.onmessage = function(e) {
+	console.log(e);
+    };
+};
+
+</script>
 
 
 {% endblock %}

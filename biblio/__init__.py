@@ -1,3 +1,0 @@
-"""
-Bibliometric tools
-"""

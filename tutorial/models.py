@@ -5,9 +5,9 @@ import os
 import werkzeug
 from flask.ext.sqlalchemy import SQLAlchemy
 from datetime import datetime
-from biblio.wos_reader import open_wos_tab, make_pytable
-from biblio.wos_reader_query import run_query
-from biblio import csv_queries
+from marion_biblio.wos_reader import open_wos_tab, make_pytable
+from marion_biblio.wos_reader_query import run_query
+from marion_biblio import csv_queries, progressivegenerators
 import csv
 
 db = SQLAlchemy()
@@ -131,16 +131,26 @@ class Dataset(db.Model):
         db.session.add(qi)
         db.session.commit()
 
-    def regenerate_h5_file(self):
+    def get_h5_file(self):
         if len(list(self.h5_files)) == 0:
             h5 = H5_fileref(dataset=self)
             db.session.add(h5)
             db.session.commit()
         else:
             h5 = self.h5_files[0]
+        return h5
+
+    def csv_rows(self):
+        return (sum(sum(1 for line in open(tab.stored_fullpath()))
+                    for tab in self.csv_files))
+
+    def regenerate_h5_file(self, progress_reporter=progressivegenerators.NPG):
+        h5 = self.get_h5_file()
         tabfiles = [tab.stored_fullpath() for tab in self.csv_files]
+        progress_reporter.lengthHint = self.csv_rows()
         with open_wos_tab(tabfiles) as wos:
-            make_pytable(wos, h5.stored_fullpath(), self.description)
+            make_pytable(wos, h5.stored_fullpath(),
+                         self.description, progress_reporter)
 
     def delete_missing_filerefs(self):
         # delete missing tabfiles

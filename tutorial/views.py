@@ -1,7 +1,10 @@
 import os
+import sys
 from flask import render_template, flash, redirect
 from flask import session, url_for, request, g
 from flask import Blueprint
+from flask import Response
+from flask import copy_current_request_context
 from flask.ext.login import login_user, logout_user, login_required
 from flask.ext.security import current_user
 from tutorial.forms import FileUploadForm, AddDatasetForm, \
@@ -12,12 +15,11 @@ from tutorial.models import User, db, Dataset, Csv_fileref, \
      Query, Query_instance, Gps_remap
 from tutorial.models import Tabdata_dataset, Tabdata_query, \
      Tabdata_query_instance
-
+from marion_biblio.progressivegenerators import QueueReporter
 from tutorial.geocache import get_location
 import json
 import logging
-
-
+import gevent
 tutorial_bp = Blueprint('tutorial_bp', __name__, template_folder='templates')
 
 
@@ -270,6 +272,35 @@ def regenerate_h5(dataset_id):
     dataset.regenerate_h5_file()
     return redirect(url_for('tutorial_bp.edit_dataset',
                             **{'dataset_id': dataset_id}))
+
+
+@tutorial_bp.route('/regenerate_h5_progress/<dataset_id>',
+                   methods=('GET', 'POST'))
+@login_required
+def regenerate_h5_progress(dataset_id):
+
+    reporter = QueueReporter(length_hint=0)
+    dataset = Dataset.query.get(int(dataset_id))
+    reporter.length_hint = dataset.csv_rows()
+
+    @copy_current_request_context
+    def do_action():
+        dataset.regenerate_h5_file(progress_reporter=reporter)
+    g1 = gevent.spawn(do_action)
+
+    @copy_current_request_context
+    def report():
+        while not g1.dead:
+            while not reporter.queue.empty():
+                print(reporter.queue.get())
+            gevent.sleep(0)
+
+    gevent.joinall([
+        g1,
+        gevent.spawn(report)
+    ])
+    return redirect(url_for('tutorial_bp.edit_dataset', **{'dataset_id': dataset_id}))
+    #Response(yieldProgress(), mimetype='text/csv')
 
 
 @tutorial_bp.route('/view_query_instance/<query_instance_id>',

@@ -15,6 +15,7 @@ from flask_security.utils import login_user, logout_user
 from flask.ext.testing import TestCase
 from flask.ext.sqlalchemy import SQLAlchemy
 from flask.ext.security import SQLAlchemyUserDatastore, current_user
+from flask.ext.bower import Bower
 
 class MarionTest( TestCase ) :
     TESTING = True
@@ -30,7 +31,9 @@ class MarionTest( TestCase ) :
     _user_basedir = os.path.join( STORAGE_BASEDIR, 'user_1' )
     
     def create_app(self) :
-        return tutorial.create_app( self )
+        result = tutorial.create_app( self )
+        Bower(result)
+        return result
 
 class UserTest( MarionTest ) :
 
@@ -154,7 +157,7 @@ class UserTest( MarionTest ) :
         self.assertEqual( d.h5_file_is_up_to_date(), True )
         
         
-from biblio import wos_reader, wos_reader_query
+from marion_biblio import wos_reader, wos_reader_query
         
 class BiblioTest( MarionTest ):
     """
@@ -196,7 +199,9 @@ class CountryCollaborationQueryTest(MarionTest):
     """
         
     def create_app(self) :
-        return tutorial.create_app( self )
+        result = tutorial.create_app( self )
+        Bower(result)
+        return result
 
 
     def setUp( self ) :

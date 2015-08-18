@@ -27,5 +27,15 @@ http://ondras.zarovi.cz/sql/demo/
   QUERY_ID (foreign key)
   
 
+requires
+flask
+flask-bower
+flask-login
+flask-security
+flask-restful
+flask-testing
+pytest-xdist
+geopy
+
 ** TODO Regenerating a blank H5 file hangs the system
 
