@@ -47,7 +47,7 @@ def after_login(resp):
         user = User(nickname=nickname, email=resp.email)
         db.session.add(user)
         db.session.commit()
-    remember_me=False
+    remember_me = False
     if 'remember_me' in session:
         remember_me = session['remember_me']
         session.pop('remember_me', None)
@@ -274,6 +274,28 @@ def regenerate_h5(dataset_id):
                             **{'dataset_id': dataset_id}))
 
 
+# example of SSEs from flask.pocoo.org/snippets/116
+class ServerSentEvent():
+
+    def __init__(self, data):
+        self.data = data
+        self.event = None
+        self.id = None
+        self.desc_map = {
+            self.data: "data",
+            self.event: "event",
+            self.id: "id"
+        }
+
+    def encode(self):
+        if not self.data:
+            return ""
+        lines = ["%s: %s" % (v, k)
+                 for k, v in self.desc_map.items() if k]
+
+        return "%s\n\n" % "\n".join(lines)
+
+
 @tutorial_bp.route('/regenerate_h5_progress/<dataset_id>',
                    methods=('GET', 'POST'))
 @login_required
@@ -289,18 +311,25 @@ def regenerate_h5_progress(dataset_id):
     g1 = gevent.spawn(do_action)
 
     @copy_current_request_context
-    def report():
-        while not g1.dead:
-            while not reporter.queue.empty():
-                print(reporter.queue.get())
-            gevent.sleep(0)
+    def reportGen():
+        try:
+            while True:
+                progress = reporter.queue.get()
+                print(progress)
+                ev = ServerSentEvent(json.dumps(dict(step=progress[0],
+                                                     length=progress[1])))
+                yield ev.encode()
+                gevent.sleep(0)
+        except GeneratorExit:
+            print("Gen exit!")
+            yield ServerSentEvent("done").encode()
 
     gevent.joinall([
         g1,
-        gevent.spawn(report)
+        # gevent.spawn(report)
     ])
-    return redirect(url_for('tutorial_bp.edit_dataset', **{'dataset_id': dataset_id}))
-    #Response(yieldProgress(), mimetype='text/csv')
+    # return redirect(url_for('tutorial_bp.edit_dataset', **{'dataset_id': dataset_id}))
+    return Response(reportGen(), mimetype='text/event-stream')
 
 
 @tutorial_bp.route('/view_query_instance/<query_instance_id>',

@@ -37,5 +37,16 @@ flask-testing
 pytest-xdist
 geopy
 
+
+In bower, requires
+bootstrap
+colorbrewer
+d3
+event-source-polyfill
+leaflet
+leaflet-providers
+leaflet.markercluster
+nvd3
+
 ** TODO Regenerating a blank H5 file hangs the system
 

@@ -7,7 +7,7 @@
 </h2>
 <hr>
 Tab-separated files belonging to this dataset:
-<p/>
+<p></p>
 <table class="table table-striped" >
     {% for csvfile in dataset.csv_files %}
     <tr>
@@ -39,7 +39,7 @@ Tab-separated files belonging to this dataset:
 
 <hr>
 <h2>Queries</h2>
-<p/>
+<p></p>
 <table class="table table-striped">
     {% for query_instance in dataset.query_instances %}
     <tr>
@@ -71,7 +71,10 @@ Tab-separated files belonging to this dataset:
 		<button type="button"  class="close"  data-dismiss="modal"  aria-hidden="true" >&times;</button>
 	    </div>
 	    <div class="modal-body" >
-		Regenerating the H5 file from tab data; please wait.<p/>
+		<p>Regenerating the H5 file from tab data; please wait.</p>
+	    </div>
+	    <div class="progress">
+		<div class="progress-bar" role="progressbar" aria-valuenow="0" aria-valuemin="0" aria-valuemax="1" style="width:0%" id="regen_progress_data"></div>
 	    </div>
 	    <div class="modal-footer">
 		<!-- <button type="button" class="btn btn-primary">Close</button> -->
@@ -86,13 +89,37 @@ Tab-separated files belonging to this dataset:
 
 /* global $, console, EventSource */
 
+var percentString = function(step, length) {
+    var result = Math.round(parseFloat(step)/parseFloat(length)*100) + "%";
+    return result;
+}
+
+var updateProgressBar = function(id, step, length) {
+    var el = document.getElementById(id);
+    el.innerHTML = step + "/" + length;
+    el.setAttribute("aria_valuenow", step);
+    el.style.width = percentString(step, length);
+    el.setAttribute("aria_valuemax", length);
+}
+
 var regenerateH5 = function(event, id) {
     event.stopPropagation();
     $("#regenProgress").modal("show");
+    updateProgressBar("regen_progress_data", 0, 1);
 
     var source = new EventSource("{{ url_for('tutorial_bp.regenerate_h5_progress', **{'dataset_id' : dataset.id}) }}");
     source.onmessage = function(e) {
-	console.log(e);
+	console.log(e.data);
+	var progress_update = JSON.parse(e.data);
+	var is_complete = progress_update.step === "progress_complete";
+	var step = is_complete ? progress_update.length : progress_update.step;
+	updateProgressBar("regen_progress_data", step, progress_update.length);
+	if (is_complete) {
+	    source.close();
+	    console.log("BLORP");
+	    $("#regenProgress").modal("hide");
+	    //location.reload();
+	};
     };
 };
 
