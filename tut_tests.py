@@ -22,7 +22,7 @@ class MarionTest( TestCase ) :
     WTF_CSRF_ENABLED = False
     SQLALCHEMY_DATABASE_URI = 'sqlite://' #/' + os.path.join(basedir, 'test.db')
     SQLALCHEMY_BINDS =  { 
-        'gps_cache' : 'sqlite:///' + os.path.join( basedir, 'test_gps_cache.db' )
+        'gps_cache' : 'sqlite:///' + os.path.join( "/tmp", 'test_gps_cache.db' )
     }
     STORAGE_BASEDIR = '/tmp'
     SECRET_KEY = "you-will-never-guess"

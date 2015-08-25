@@ -34,6 +34,8 @@ flask-login
 flask-security
 flask-restful
 flask-testing
+flask-sqlalchemy
+gevent
 pytest-xdist
 geopy
 
