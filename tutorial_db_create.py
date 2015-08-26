@@ -40,8 +40,8 @@ with app.app_context() :
     replace_query(db, name = "Hexbin", description = "Hexbin-and-arcs display of papers in a dataset; keep sets small!", filename = "hexbin_query.json", template="hexbin_query.html" )
 
     # create tabdata queries
-    replace_tabdata_query( name="Tabdata_hexbin", description="Hexbin of geographical data", parameters='{ "locationColumn" : 0, "valueColumn" : 0, "textColumn" : 0 }', template="tabdata_hexbin_query.html" )
-    replace_tabdata_query( name="Tabdata_markercluster", description="Markercluster map of geographical data", parameters='{ "locationColumn" : 0, "valueColumn" : 0, "textColumn" : 0 }', template="tabdata_markercluster_query.html" )
+    replace_tabdata_query(db, name="Tabdata_hexbin", description="Hexbin of geographical data", parameters='{ "locationColumn" : 0, "valueColumn" : 0, "textColumn" : 0 }', template="tabdata_hexbin_query.html" )
+    replace_tabdata_query(db, name="Tabdata_markercluster", description="Markercluster map of geographical data", parameters='{ "locationColumn" : 0, "valueColumn" : 0, "textColumn" : 0 }', template="tabdata_markercluster_query.html" )
 
         # create users
     user_datastore = SQLAlchemyUserDatastore( db, User, Role )
