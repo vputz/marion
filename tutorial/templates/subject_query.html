@@ -16,6 +16,33 @@
 {% if item[0] == "country_collaboration" %}
 {{ item[1] }}
 {% endif %}
+
+{% if item[0] == "research_fronts" %}
+{% for group in item[1] %}
+<hr>
+<table border="1" class="table table-striped">
+    <tr>
+	<th>Citations</th>
+	<th>Title</th>
+	<th>Authors</th>
+	<th>DOI</th>
+    </tr>
+{% for paper in group %}
+    <tr>
+	<td><b>{{ paper.weight }}</b></td>
+	<td>{{ paper.title }}</td>
+	<td>
+	    {% for author in paper.author %}
+	    {{ author }}
+	    {% endfor %}
+	</td>
+	<td><a href="http://dx.doi.org/{{paper.doi}}" >{{ paper.doi }}</a></td>
+    </tr>
+{% endfor %}
+</table>
+{% endfor %}
+{% endif %}
+
 </table>
 
 {% endfor %}

@@ -11,11 +11,7 @@
 	"queryType" : "categoricalSummary",
 	"queryString" : "list(chain(*[ [x['address'].split(b',')[0].decode() for x in w5.h5.root.authortable.where( 'author == y', condvars={'y' : y})] for y in chain( *(list(z) for z in w5.h5.root.authors) ) ]))"
     },
-    "countries" : {
-	"queryType" : "categoricalSummary",
-	"queryString" : "list((y.decode() for y in chain(*[ x for x in w5.h5.root.countries ])))"
-    },
-    "country_collaboration" : {
-	"queryType" : "countryCollaborationQuery"
+    "research_fronts" : {
+	"queryType" : "researchFrontQuery"
     }
 }

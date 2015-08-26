@@ -3,12 +3,19 @@
 {% for item in query_data.items() %}
 
 <h2>{{ item[0] }}</h2>
+
+{% if item[1] is not mapping %}
 <table>
-{% for val in item[1][0:20] %}
+{% for val in item[1][0:10] %}
 <tr>
 <td>{{ val['value'] }}</td><td>{{ val['label'] }}</td>
 </tr>
 {% endfor %}
+{% endif %}
+
+{% if item[0] == "country_collaboration" %}
+{{ item[1] }}
+{% endif %}
 </table>
 
 {% endfor %}

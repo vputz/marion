@@ -1,30 +1,35 @@
 #!venv/bin/python
 from migrate.versioning import api
-from config import SQLALCHEMY_DATABASE_URI
-from config import SQLALCHEMY_MIGRATE_REPO
+from local_conf import SQLALCHEMY_DATABASE_URI
+from local_conf import SQLALCHEMY_MIGRATE_REPO
 from tutorial import db, app
 import os.path
 from flask.ext.security import SQLAlchemyUserDatastore
 
 from tutorial.models import User, Query, Role, Gps_remap, Gps_cache, Tabdata_query
 
+print(SQLALCHEMY_MIGRATE_REPO)
+
+
 def create_gps_cache() :
     db.create_all( bind = 'gps_cache' )
     
+def replace_query( db, name, description, filename, template ):
+    existing = Query.query.filter_by(name=name)
+    for q in existing:
+        db.session.delete(q)
+    newq = Query(name=name, description=description, filename=filename, template=template)
+    db.session.add(q)
+    db.session.commit()
 
 with app.app_context() :
     db.create_all()
+    db.session.commit()
 
     # create queries
-    db.session.commit()
-    q = Query( name = "Subject", description = "Analysis of a subject; most-published journals, authors, universities, countries", filename = "subject_query.json", template="subject_query.html" )
-    db.session.add( q )
-    db.session.commit()
-    q = Query( name = "Country", description = "Analysis of a country; number of papers by subject, university, collaborating country", filename = "country_query.json", template="country_query.html" )
-    db.session.add( q )
-    db.session.commit()
-    q = Query( name = "Hexbin", description = "Hexbin-and-arcs display of papers in a dataset; keep sets small!", filename = "hexbin_query.json", template="hexbin_query.html" )
-    db.session.add(q)
+    q = replace_query(db, name = "Subject", description = "Analysis of a subject; most-published journals, authors, universities, countries", filename = "subject_query.json", template="subject_query.html" )
+    q = replace_query(db, name = "Country", description = "Analysis of a country; number of papers by subject, university, collaborating country", filename = "country_query.json", template="country_query.html" )
+    q = replace_query(db, name = "Hexbin", description = "Hexbin-and-arcs display of papers in a dataset; keep sets small!", filename = "hexbin_query.json", template="hexbin_query.html" )
 
     # create tabdata queries
     q = Tabdata_query( name="Tabdata_hexbin", description="Hexbin of geographical data", parameters='{ "locationColumn" : 0, "valueColumn" : 0, "textColumn" : 0 }', template="tabdata_hexbin_query.html" )
@@ -34,9 +39,10 @@ with app.app_context() :
 
         # create users
     user_datastore = SQLAlchemyUserDatastore( db, User, Role )
-    admin = user_datastore.create_user( nickname = "admin", email="vputz@nyx.net", password="marion" )
-    db.session.add( admin )
-    db.session.commit()
+    if user_datastore.find_user(nickname="admin") is None :
+        admin = user_datastore.create_user( nickname = "admin", email="vputz@nyx.net", password="marion" )
+        db.session.add( admin )
+        db.session.commit()
 
     create_gps_cache()
 

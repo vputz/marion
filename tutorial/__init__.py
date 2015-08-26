@@ -33,6 +33,6 @@ def create_app(config_object):
     return app
 
 
-app = create_app('config')
+app = create_app('local_conf')
 Bower(app)
 # lm.login_view = 'login'

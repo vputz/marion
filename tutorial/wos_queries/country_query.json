@@ -10,5 +10,8 @@
     "countries" : {
 	"queryType" : "categoricalSummary",
 	"queryString" : "list((y.decode() for y in chain(*[ x for x in w5.h5.root.countries ])))"
+    },
+    "country_collaboration" : {
+	"queryType" : "countryCollaborationQuery"
     }
 }
