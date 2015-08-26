@@ -141,7 +141,7 @@ class Dataset(db.Model):
         return h5
 
     def csv_rows(self):
-        return (sum(sum(1 for line in open(tab.stored_fullpath()))
+        return (sum(sum(1 for line in open(tab.stored_fullpath(),encoding="utf-8"))
                     for tab in self.csv_files))
 
     def regenerate_h5_file(self, progress_reporter=progressivegenerators.NPG):
