@@ -2,7 +2,7 @@
 
 {% block content %}
 {% from "_formhelpers.html" import render_field %}
-<form  action="/add_dataset/" method="POST" enctype="multipart/form-data">
+<form  action="{{ url_for('tutorial_bp.add_dataset') }}" method="POST" enctype="multipart/form-data">
 {{ form.csrf_token }}
 {{ render_field(form.descriptionField) }}
 {{ render_field(form.queryField) }}
