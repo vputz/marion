@@ -38,6 +38,7 @@ flask-sqlalchemy
 gevent
 pytest-xdist
 geopy
+SQLAlchemy-migrate
 
 
 In bower, requires
