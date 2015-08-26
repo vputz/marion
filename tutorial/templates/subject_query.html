@@ -5,7 +5,7 @@
 <h2>{{ item[0] }}</h2>
 
 {% if item[1] is not mapping %}
-<table>
+<table class="table table-striped">
 {% for val in item[1][0:10] %}
 <tr>
 <td>{{ val['value'] }}</td><td>{{ val['label'] }}</td>
