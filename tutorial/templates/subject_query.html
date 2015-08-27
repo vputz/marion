@@ -17,6 +17,13 @@
 
 {% if item[0] == "research_fronts" %}
 <h2>Research Fronts</h2>
+<p>
+Research fronts are groups of papers that are often cited together,
+and often represent one research area that is either under active
+development or has been historically significant.  What is not shown
+on this report is the frequency of cocitation of the papers, just
+their total citations.
+</p>
 {% for group in item[1] %}
 <hr>
 <table border="1" class="table table-striped">
@@ -45,6 +52,17 @@
 
 {% if item[0] == "papers_pagerank" %}
 <h2>PageRank (Paper Citations)</h2>
+<p>
+PageRank, developed by Google, represents the "importance" of a document or author based
+on the number of people who link to them.
+</p>
+<p>
+    <b>Warning</b>
+Note that unlike research fronts PageRank only considers periodicals and authors which
+are actually in the corpus, so influential papers and authors outside the corpus 
+of the Web of Science query will not be
+represented
+</p>
 <table border="1"  class="table table-striped">
     <tr>
 	<th>PageRank</th>
@@ -69,6 +87,17 @@
 
 {% if item[0] == "authors_pagerank" %}
 <h2>PageRank (Author Citations)</h2>
+<p>
+PageRank, developed by Google, represents the "importance" of a document or author based
+on the number of people who link to them.
+</p>
+<p>
+    <b>Warning</b>
+Note that unlike research fronts PageRank only considers periodicals and authors which
+are actually in the corpus, so influential papers and authors outside the corpus 
+of the Web of Science query will not be
+represented
+</p>
 <table border="1" class="table table-striped">
     <tr>
 	<th>PageRank</th>
