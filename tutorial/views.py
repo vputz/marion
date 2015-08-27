@@ -23,6 +23,12 @@ import gevent
 tutorial_bp = Blueprint('tutorial_bp', __name__, template_folder='templates')
 
 
+def authorlink_filter(s):
+    return 'http://scholar.google.com/scholar?q={0}'.format(s)
+
+tutorial_bp.add_app_template_filter(authorlink_filter, "authorlink")
+
+
 @tutorial_bp.before_request
 def before_request():
     g.user = current_user

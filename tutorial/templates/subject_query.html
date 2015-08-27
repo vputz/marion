@@ -2,22 +2,21 @@
 {% block content %}
 {% for item in query_data.items() %}
 
-<h2>{{ item[0] }}</h2>
 
-{% if item[1] is not mapping %}
+{% if item[0] == "journals" or item[0] == "universities" or item[0] == "authors" %}
+<h2>{{ item[0] }}</h2>
+<h3>By total quantity of publications</h3>
 <table class="table table-striped">
 {% for val in item[1][0:10] %}
 <tr>
 <td>{{ val['value'] }}</td><td>{{ val['label'] }}</td>
 </tr>
 {% endfor %}
-{% endif %}
-
-{% if item[0] == "country_collaboration" %}
-{{ item[1] }}
+</table>
 {% endif %}
 
 {% if item[0] == "research_fronts" %}
+<h2>Research Fronts</h2>
 {% for group in item[1] %}
 <hr>
 <table border="1" class="table table-striped">
@@ -33,7 +32,7 @@
 	<td>{{ paper.title }}</td>
 	<td>
 	    {% for author in paper.author %}
-	    {{ author }}
+	    <a href="{{ author | authorlink }}" >{{ author }}</a>
 	    {% endfor %}
 	</td>
 	<td><a href="http://dx.doi.org/{{paper.doi}}" >{{ paper.doi }}</a></td>
@@ -43,7 +42,46 @@
 {% endfor %}
 {% endif %}
 
+
+{% if item[0] == "papers_pagerank" %}
+<h2>PageRank (Paper Citations)</h2>
+<table border="1"  class="table table-striped">
+    <tr>
+	<th>PageRank</th>
+	<th>Title</th>
+	<th>Authors</th>
+	<th>DOI</th>
+    </tr>
+{% for paper in item[1] %}
+    <tr>
+	<td><b>{{ '%0.5f' % paper.pagerank|float }}</b></td>
+	<td>{{ paper.title }}</td>
+	<td>
+	    {% for author in paper.author %}
+	    <a href="{{ author | authorlink }}" >{{ author }}</a>
+	    {% endfor %}
+	</td>
+	<td><a href="http://dx.doi.org/{{paper.doi}}" >{{ paper.doi }}</a></td>
+    </tr>
+{% endfor %}
 </table>
+{% endif %}
+
+{% if item[0] == "authors_pagerank" %}
+<h2>PageRank (Author Citations)</h2>
+<table border="1" class="table table-striped">
+    <tr>
+	<th>PageRank</th>
+	<th>Author</th>
+    </tr>
+{% for author in item[1] %}
+    <tr>
+	<td><b>{{ '%0.5f' % author.pagerank | float }}</b></td>
+	<td><a href="{{ author.author | authorlink }}">{{ author.author }}</a></td>
+    </tr>
+{% endfor %}
+</table>
+{% endif %}
 
 {% endfor %}
 {% endblock %}

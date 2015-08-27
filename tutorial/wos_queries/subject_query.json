@@ -13,5 +13,11 @@
     },
     "research_fronts" : {
 	"queryType" : "researchFrontQuery"
+    },
+    "papers_pagerank" : {
+	"queryType" : "papersPagerankQuery"
+    },
+    "authors_pagerank" : {
+	"queryType" : "authorsPagerankQuery"
     }
 }
