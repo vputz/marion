@@ -113,7 +113,6 @@ var scheme = colorbrewer["YlOrRd"][classes];
 var color;
 
 function hex_style( hexagons ) {
-    console.flush();
     // maintain a density scale relative to initial zoom level
     if (!(max && scale)) { 
 	max = d3.max( hexagons.data(), function(d) { return d.length; });
@@ -128,7 +127,6 @@ function hex_style( hexagons ) {
 
     .attr("fill", function(d) {
 	//console.log(totalval(d));
-	//console.flush();
 	return color(totalval(d));//return scheme[scale(d.length)];
     })
     .append("svg:title").text( function(d) { result = ""; d.forEach( function(d2) { result += d2["text"]+ "\n"; }); return result; } );
@@ -147,7 +145,6 @@ d3.json("{{ url_for('retrieve_query_result', **{'id' : query_instance.id} ) }}",
     edges = d['hexbin']['hexbin']['edges'];
     edges.forEach( function(d) {
 	//console.log(d);
-	//console.flush();
 	if ( ( d.fromlng != d.tolng ) || (d.fromlat != d.tolat) ) {
 	    var from = new arc.Coord( d.fromlng, d.fromlat );
 	    var to = new arc.Coord( d.tolng, d.tolat );
