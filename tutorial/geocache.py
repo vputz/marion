@@ -14,7 +14,7 @@ def cache_has_key(loc):
 
 
 def get_location(loc, cache_result=False):
-    if type(loc) == type(b"bytes"):
+    if isinstance(loc, bytes):
         loc = loc.decode('utf-8')
     # get the remapped location
     if remap_has_key(loc):
@@ -54,7 +54,7 @@ def get_locations_and_unknowns(locs, cache_result=True):
     unknowns = []
     for loc in locs:
         this_result = get_location(loc, cache_result)
-        if this_result is not None:
+        if this_result is None:
             unknowns.append(loc)
         else:
             locations[loc] = this_result
