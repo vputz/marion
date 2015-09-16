@@ -1,0 +1,19 @@
+<link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='css/Marion.css') }}"/>
+
+{% from "security/_macros.html" import render_field_with_errors, render_field %}
+{% include "security/_messages.html" %}
+<div class="banner" ><h1>Welcome to Marion!</h1>
+    <p>A lightweight bibliometrics analysis tool for small-scale literature searches</p></div>
+<form action="{{ url_for_security('login') }}" method="POST" name="login_user_form">
+  {{ login_user_form.hidden_tag() }}
+    <p>As marion is a work in progress, treat passwords as having very low security, and do not be surprised if data or accounts are periodically deleted.</p>
+    <p>Your email address is currently only used as a username; no email will actually be sent to the supplied address, although potentially this could change in the future</p>
+    <hr>
+  {{ render_field_with_errors(login_user_form.email) }}
+  {{ render_field_with_errors(login_user_form.password) }}
+  {{ render_field_with_errors(login_user_form.remember) }}
+  {{ render_field(login_user_form.next) }}
+  {{ render_field(login_user_form.submit) }}
+</form>
+{% include "security/_menu.html" %}
+

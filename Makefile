@@ -1,6 +1,10 @@
 test :
 	py.test tut_tests.py -n 1
 
+docs:
+	cd doc && $(MAKE) html
+	cp -r doc/build/html/* tutorial/static/doc
+
 alltest :
 	py.test tut_tests.py -n 1
 	py.test tut_gps_tests.py

@@ -34,6 +34,7 @@ Tab-separated files belonging to this dataset:
     <font color="red">This dataset's H5 file is nonexistent or not up to date; click 
     <a class="btn btn-default" href="{{ url_for('tutorial_bp.regenerate_h5', **{ 'dataset_id' : dataset.id }) }}">Regenerate</a>
     fito regenerate it</font>
+    <p>This is normal for new (empty) datasets.  For a guide on downloading useful data from Web of Science, click <a href="{{ url_for('static', filename='doc/adding_dataset_tabfiles.html') }}">here</a></p>
     {% endif %}
 </form>
 

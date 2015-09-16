@@ -28,17 +28,17 @@ http://ondras.zarovi.cz/sql/demo/
   
 
 requires
-flask
-flask-bower
-flask-login
-flask-security
-flask-restful
-flask-testing
-flask-sqlalchemy
-gevent
-pytest-xdist
-geopy
-SQLAlchemy-migrate
+flask (0.10.1)
+flask-bower (1.2.1)
+flask-login==0.2.11
+flask-security (1.7.4)
+flask-restful (0.3.4)
+flask-testing (0.4.2)
+flask-sqlalchemy (2.0)
+gevent (1.1b3)
+pytest-xdist (1.13.1)
+geopy (1.10.0)
+SQLAlchemy-migrate (0.9.7)
 
 
 In bower, requires

@@ -74,7 +74,6 @@ def index():
                            datasets=list(user.datasets),
                            tabdata_datasets=list(user.tabdata_datasets))
 
-
 @tutorial_bp.route('/upload_file/', methods=("GET", "POST"))
 @login_required
 def upload_file():

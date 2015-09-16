@@ -4,9 +4,14 @@
 {% from "_formhelpers.html" import render_field %}
 <form  action="{{ url_for('tutorial_bp.add_dataset') }}" method="POST" enctype="multipart/form-data">
 {{ form.csrf_token }}
-{{ render_field(form.descriptionField) }}
-{{ render_field(form.queryField) }}
+    <p>The "Description" of your data set should be a fairly short word or phrase (such as "Metamaterials since 1999" or "Papers by Albert Einstein"</p>
+{{ render_field(form.descriptionField, size=80) }}
+    <hr>
+    <p>The "query text" field should be the query used in Web of Science or other database (such as "TS=metamaterials" or "AU=*Einstein").  It is not evaluated by Marion, merely included for your reference.
+{{ render_field(form.queryField, size=80) }}
 
 <p><input type="submit" value="Add this dataset">
 </form>
+<hr>
+<h2>Note:</h2> once you create your dataset, it will be empty; click on its link (the "Date Created") to add data!
 {% endblock %}
