@@ -13,6 +13,41 @@ def cache_has_key(loc):
     return Gps_cache.query.get(loc) is not None
 
 
+def next_guess(name):
+    """
+    Takes the name in question assuming it to be an
+    address of the form "university, department, address, country"
+    and return a simplified version with just the beginning
+    and ends
+    """
+    parts = [s.strip() for s in name.split(",")]
+    if len(parts) > 1:
+        return ", ".join(parts[1:])
+    else:
+        raise ValueError('name cannot be split further')
+
+
+def gps_query(loc):
+    """can throw GeopyError"""
+    coder = geocoders.GoogleV3()
+    partial = coder.geocode(loc, exactly_one=False)
+    if (partial is None):
+        result = None
+    else:
+        place, (lat, lon) = partial[0]
+        result = {'lat': lat, 'lon': lon}
+    return result
+
+
+def successive_gps_query(loc):
+    guess = loc
+    result = gps_query(guess)
+    while result is None:
+        guess = next_guess(guess)
+        result = gps_query(guess)
+    return result
+
+
 def get_location(loc, cache_result=False):
     if isinstance(loc, bytes):
         loc = loc.decode('utf-8')
@@ -26,17 +61,11 @@ def get_location(loc, cache_result=False):
         return {'lat': cache.latitude, 'lon': cache.longitude}
     # if we haven't cached anything, go look it up and
     # throw an exception if it fails
-    coder = geocoders.GoogleV3()
     result = None
 
     try:
-        partial = coder.geocode(loc, exactly_one=False)
-        if (partial is None):
-            result = None
-        else:
-            place, (lat, lon) = partial[0]
-            result = {'lat': lat, 'lon': lon}
-    except GeopyError:
+        result = successive_gps_query(loc)
+    except (GeopyError, ValueError) as e:
         result = None
     if cache_result is True and result is not None:
         new_cache = Gps_cache(location=loc, latitude=result['lat'],

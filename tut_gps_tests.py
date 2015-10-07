@@ -3,7 +3,7 @@ from flask.ext.security import SQLAlchemyUserDatastore
 import tutorial
 from tutorial.models import User, Role
 from tutorial.models import Gps_remap, Gps_cache
-from tutorial.geocache import remap_has_key, cache_has_key, get_location, get_locations_and_unknowns, get_locations_and_unknowns_nocache
+from tutorial.geocache import remap_has_key, cache_has_key, get_location, get_locations_and_unknowns, get_locations_and_unknowns_nocache, next_guess
 from flask_security.utils import login_user, logout_user
 from marion_biblio import wos_reader, wos_reader_query
 
@@ -59,6 +59,12 @@ class GPSTest(MarionTest):
     def test_has_keys(self):
         self.assertAlmostEqual(remap_has_key(self.remap_from), True)
         self.assertAlmostEqual(cache_has_key(self.cache_loc), True)
+
+    def test_simplified_guess(self):
+        self.assertEqual(next_guess("Inst Angew Phys, D-76131 Karlsruhe, Germany"),
+                         "Inst Angew Phys, D-76131 Karlsruhe, Germany")
+        self.assertEqual(next_guess("Soochow Univ, Sch Phys Sci & Technol, Suzhou 215006, Jiangsu, Peoples R China"),
+                         "Sch Phys Sci & Technol, Suzhou 215006, Jiangsu, Peoples R China")
 
     def test_get_location(self):
         self.assertEqual(get_location("blorfing"), None)
