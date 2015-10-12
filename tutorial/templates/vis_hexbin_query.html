@@ -97,7 +97,7 @@ function totalval( json ) {
 function maxval( d ) {
     result = 0;
     d.forEach( function(d) {
-	var thisArg = d['value'];
+	var thisArg = d['pubcount'];
 	if ( isNaN( thisArg ) ) {
 	    thisArg = 0;
 	}
@@ -121,6 +121,8 @@ function hex_style( hexagons ) {
 	    .range(d3.range(classes));
     }
 
+    color = d3.scale.sqrt().domain([1, max]).range(["palegreen","red"])
+
     hexagons
     .attr("stroke", scheme[classes-1])
     .attr("fill-opacity", 0.7)
@@ -134,9 +136,10 @@ function hex_style( hexagons ) {
 
 d3.json("{{ url_for('retrieve_query_result', **{'id' : query_instance.id} ) }}", function(d) {
     nodes = d['hexbin']['hexbin']['nodes']
-    color = d3.scale.sqrt()
-	.domain([1, maxval( nodes )])
-	.range(["palegreen","red"]);
+    console.log(maxval(nodes))
+    //color = d3.scale.sqrt()
+	//.domain([1, maxval( nodes )])
+	//.range(["palegreen","red"]);
     
     L.hexLayer( nodes, {
 	applyStyle: hex_style
@@ -153,9 +156,9 @@ d3.json("{{ url_for('retrieve_query_result', **{'id' : query_instance.id} ) }}",
 	    var gc = greatCircle.Arc(npoints);
 	    var myStyle = { "color" : "#ffffff", "weight" : d.weight, "opacity" : 0.5 };
 	    var geojson_feature = gc.json();
-	    var line = new L.geoJson( geojson_feature,  {style: myStyle} ).addTo(map);
+	    //var line = new L.geoJson( geojson_feature,  {style: myStyle} ).addTo(map);
 	    //line.addData( geojson_feature );
-	    map.addLayer(line);
+	    //map.addLayer(line);
 	}
     })
 });

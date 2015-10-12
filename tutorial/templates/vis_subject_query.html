@@ -45,10 +45,10 @@ Countries, by volume of publications in this subject area.
 
 
     d3.json("{{ url_for('retrieve_query_result', **{'id' : query_instance.id} ) }}", function(d) {
-    makeExpandableBarChart( "#chart_journals", "Journals", d.journals, 640, 200 );
-    makeExpandableBarChart( "#chart_authors", "Authors", d.authors, 640, 200 );
-    makeExpandableBarChart( "#chart_universities", "Universities", d.universities, 640, 200 );
-    makeExpandableBarChart( "#chart_countries", "Countries", d.countries, 640, 200 );
+    makeExpandableBarChart( "#chart_journals", "Journals", d.journals, 640, 600 );
+    makeExpandableBarChart( "#chart_authors", "Authors", d.authors, 640, 600 );
+    makeExpandableBarChart( "#chart_universities", "Universities", d.universities, 640, 600 );
+    makeExpandableBarChart( "#chart_countries", "Countries", d.countries, 640, 600 );
 
     makeChordChart( "#chart_country_collaborations",
     d.country_collaboration.matrix,

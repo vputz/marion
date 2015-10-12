@@ -50,9 +50,9 @@ var limitedData = function( d, l ) {
 
 
 d3.json("{{ url_for('retrieve_query_result', **{'id' : query_instance.id} ) }}", function(d) {
-    makeExpandableBarChart( "#chart_subjects", "Subjects", d.Subjects, 800, 200 );
-    makeExpandableBarChart( "#chart_universities", "Universities", d.universities, 800, 200 );
-    makeExpandableBarChart( "#chart_countries", "Countries", d.countries, 800, 200 );
+    makeExpandableBarChart( "#chart_subjects", "Subjects", d.Subjects, 800, 600 );
+    makeExpandableBarChart( "#chart_universities", "Universities", d.universities, 800, 600 );
+    makeExpandableBarChart( "#chart_countries", "Countries", d.countries, 800, 600 );
     makeChordChart( "#chart_country_collaborations",
     d.country_collaboration.matrix,
     d.country_collaboration.key );
